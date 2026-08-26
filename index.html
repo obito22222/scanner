@@ -2,206 +2,269 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>SJL Yard Scanner</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background-color: #111827; color: #ffffff; padding: 16px; min-height: 100vh; display: flex; flex-direction: column; }
-    .header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid #374151; }
-    .title { font-size: 18px; font-weight: bold; color: #60a5fa; }
-    .subtitle { font-size: 11px; color: #9ca3af; }
-    .zone-select { background: #1f2937; color: #facc15; border: 1px solid #4b5563; padding: 6px 10px; border-radius: 6px; font-weight: bold; font-size: 14px; }
-    .camera-container { position: relative; width: 100%; height: 260px; background: #000; border-radius: 12px; overflow: hidden; margin: 14px 0; border: 2px solid #3b82f6; display: flex; align-items: center; justify-content: center; }
-    video { width: 100%; height: 100%; object-fit: cover; }
-    .reticle { position: absolute; inset: 20px; border: 2px dashed #facc15; border-radius: 8px; pointer-events: none; opacity: 0.75; display: flex; align-items: center; justify-content: center; }
-    .reticle-label { background: rgba(0,0,0,0.7); color: #fef08a; font-size: 11px; padding: 4px 8px; border-radius: 4px; }
-    .status-badge { position: absolute; bottom: 8px; left: 8px; background: rgba(0,0,0,0.85); color: #4ade80; font-family: monospace; font-size: 11px; padding: 3px 8px; border-radius: 4px; }
-    .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
-    .btn { border: none; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; text-align: center; }
-    .btn-camera { background: #16a34a; color: #fff; }
-    .btn-camera.active { background: #ca8a04; }
-    .btn-export { background: #2563eb; color: #fff; }
-    .card { background: #1f2937; border-radius: 8px; padding: 10px 14px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #374151; }
-    .card-title { font-size: 14px; font-weight: 600; }
-    .badge-count { color: #facc15; font-size: 18px; font-weight: bold; }
-    .table-box { background: #1f2937; border-radius: 8px; padding: 8px; overflow-y: auto; max-height: 200px; border: 1px solid #374151; flex: 1; }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
-    th { color: #9ca3af; padding: 6px; font-size: 11px; text-transform: uppercase; border-bottom: 1px solid #374151; }
-    td { padding: 8px 6px; border-bottom: 1px solid #2d3748; }
-    .plate-text { color: #fef08a; font-weight: bold; font-size: 14px; }
-    .zone-text { color: #93c5fd; font-weight: 600; }
-    .btn-delete { background: none; border: none; color: #f87171; font-size: 14px; cursor: pointer; }
-    .manual-add { display: flex; gap: 8px; margin-top: 10px; }
-    .input-text { flex: 1; background: #111827; border: 1px solid #4b5563; border-radius: 6px; padding: 8px; color: #fff; font-size: 13px; text-transform: uppercase; }
-    .btn-add { background: #4b5563; color: #fff; padding: 8px 12px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; font-size: 12px; }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SJL Triptyque Master Control</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
-<body>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans">
 
-  <div class="header">
-    <div>
-      <div class="title">🚛 SJL Yard Scanner</div>
-      <div class="subtitle">Quick Park Situation Logger</div>
+  <!-- Top Navbar -->
+  <header class="bg-slate-800 border-b border-slate-700 px-6 py-4 flex flex-wrap justify-between items-center gap-4">
+    <div class="flex items-center space-x-3">
+      <div class="bg-blue-600 text-white p-2 rounded-lg">
+        <i class="fa-solid fa-truck-ramp-box text-xl"></i>
+      </div>
+      <div>
+        <h1 class="text-lg font-bold text-white tracking-wide">SJL Triptyque 360°</h1>
+        <p class="text-xs text-slate-400">Fleet Customs Stay & Risk Monitor</p>
+      </div>
     </div>
-    <div>
-      <select id="zoneSelect" class="zone-select">
-        <option value="TFZ">TFZ</option>
-        <option value="CASA">CASA</option>
-        <option value="TAC">TAC</option>
-      </select>
+    
+    <div class="flex items-center space-x-3">
+      <label class="cursor-pointer bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-4 py-2.5 rounded-lg shadow flex items-center gap-2 transition">
+        <i class="fa-solid fa-file-excel"></i> Load Tanger Med Import File
+        <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleFileUpload(event)">
+      </label>
+      <button onclick="exportReport()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-4 py-2.5 rounded-lg shadow flex items-center gap-2 transition">
+        <i class="fa-solid fa-download"></i> Export Alert List
+      </button>
     </div>
-  </div>
+  </header>
 
-  <div class="camera-container">
-    <video id="cameraStream" autoplay playsinline muted></video>
-    <div class="reticle">
-      <span class="reticle-label">Frame Trailer Matricule</span>
+  <!-- Main Container -->
+  <main class="flex-1 p-6 max-w-7xl w-full mx-auto space-y-6">
+
+    <!-- KPI Summary Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl flex items-center justify-between">
+        <div>
+          <p class="text-xs uppercase font-semibold text-slate-400">Total Tracked Units</p>
+          <h2 id="kpiTotal" class="text-2xl font-bold text-white mt-1">0</h2>
+        </div>
+        <i class="fa-solid fa-cubes text-slate-500 text-2xl"></i>
+      </div>
+
+      <div class="bg-rose-950/40 border border-rose-800/50 p-4 rounded-xl flex items-center justify-between">
+        <div>
+          <p class="text-xs uppercase font-semibold text-rose-400">Critical (&le; 3 Days / Over)</p>
+          <h2 id="kpiCritical" class="text-2xl font-bold text-rose-400 mt-1">0</h2>
+        </div>
+        <i class="fa-solid fa-triangle-exclamation text-rose-500 text-2xl"></i>
+      </div>
+
+      <div class="bg-amber-950/40 border border-amber-800/50 p-4 rounded-xl flex items-center justify-between">
+        <div>
+          <p class="text-xs uppercase font-semibold text-amber-400">Warning (4 - 10 Days)</p>
+          <h2 id="kpiWarning" class="text-2xl font-bold text-amber-400 mt-1">0</h2>
+        </div>
+        <i class="fa-solid fa-clock-rotate-left text-amber-500 text-2xl"></i>
+      </div>
+
+      <div class="bg-emerald-950/40 border border-emerald-800/50 p-4 rounded-xl flex items-center justify-between">
+        <div>
+          <p class="text-xs uppercase font-semibold text-emerald-400">In Safe Range (&gt; 10 Days)</p>
+          <h2 id="kpiSafe" class="text-2xl font-bold text-emerald-400 mt-1">0</h2>
+        </div>
+        <i class="fa-solid fa-shield-halved text-emerald-500 text-2xl"></i>
+      </div>
     </div>
-    <div id="statusBadge" class="status-badge">Ready • Tap Start</div>
-  </div>
 
-  <div class="controls">
-    <button id="toggleBtn" onclick="toggleCamera()" class="btn btn-camera">📷 Start Camera</button>
-    <button onclick="exportCSV()" class="btn btn-export">📥 Export (.CSV)</button>
-  </div>
+    <!-- Filters & Search Bar -->
+    <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl flex flex-wrap gap-4 items-center justify-between">
+      <div class="relative flex-1 min-w-[240px]">
+        <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-xs"></i>
+        <input type="text" id="searchInput" oninput="applyFilters()" placeholder="Search trailer, client, driver..." class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-9 pr-4 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+      </div>
 
-  <div class="card">
-    <span class="card-title">Scanned Today:</span>
-    <span id="counter" class="badge-count">0</span>
-  </div>
+      <div class="flex items-center gap-2">
+        <select id="filterStatus" onchange="applyFilters()" class="bg-slate-900 border border-slate-700 text-slate-300 text-xs rounded-lg px-3 py-2.5 focus:outline-none focus:border-blue-500">
+          <option value="ALL">All Risk Levels</option>
+          <option value="CRITICAL">🔴 Critical (&le; 3 Days)</option>
+          <option value="WARNING">🟡 Warning (4-10 Days)</option>
+          <option value="SAFE">🟢 Safe (&gt; 10 Days)</option>
+        </select>
+      </div>
+    </div>
 
-  <div class="table-box">
-    <table>
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Matricule</th>
-          <th>Zone</th>
-          <th>Time</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody id="tableBody">
-        <!-- Logged rows appear here -->
-      </tbody>
-    </table>
-  </div>
+    <!-- Data Table -->
+    <div class="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs text-slate-300">
+          <thead class="bg-slate-900/80 text-slate-400 uppercase font-semibold border-b border-slate-700">
+            <tr>
+              <th class="py-3 px-4">Matricule</th>
+              <th class="py-3 px-4">Client</th>
+              <th class="py-3 px-4">Chauffeur</th>
+              <th class="py-3 px-4">Port Exit Date</th>
+              <th class="py-3 px-4">Days in Morocco</th>
+              <th class="py-3 px-4">Days Remaining</th>
+              <th class="py-3 px-4 text-center">Status</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody" class="divide-y divide-slate-700/60 font-medium">
+            <tr>
+              <td colspan="7" class="text-center py-10 text-slate-500">
+                <i class="fa-solid fa-arrow-up-from-bracket text-2xl mb-2 block"></i>
+                Please upload the Tanger Med <strong>Import</strong> Excel file to compute Triptyques.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
 
-  <!-- Fast manual input if camera isn't needed -->
-  <div class="manual-add">
-    <input type="text" id="manualInput" class="input-text" placeholder="Or type matricule (e.g. R 8174 BDG)">
-    <button onclick="addManual()" class="btn-add">+ Add</button>
-  </div>
+  </main>
 
   <script>
-    let stream = null;
-    let isRunning = false;
-    let list = JSON.parse(localStorage.getItem('sjl_scanned_list') || '[]');
+    let rawDataset = [];
+    let filteredDataset = [];
 
-    function renderList() {
+    function handleFileUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const data = new Uint8Array(evt.target.result);
+        const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+        
+        rawDataset = [];
+
+        // Parse across all sheets in the Import workbook
+        workbook.SheetNames.forEach(sheetName => {
+          const sheet = workbook.Sheets[sheetName];
+          const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+          
+          if (rows.length < 2) return;
+
+          // Header index mapping
+          const headers = rows[0].map(h => (h ? h.toString().toLowerCase().trim() : ""));
+          const colMatricule = headers.findIndex(h => h.includes("matricule"));
+          const colClient = headers.findIndex(h => h.includes("client"));
+          const colChauffeur = headers.findIndex(h => h.includes("chauffeur"));
+          const colSortie = headers.findIndex(h => h.includes("sortie") || h.includes("date de sortie"));
+
+          for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            const matricule = row[colMatricule];
+            const dateSortie = row[colSortie];
+
+            if (!matricule || !dateSortie) continue;
+
+            const parsedDate = parseDate(dateSortie);
+            if (!parsedDate) continue;
+
+            const today = new Date();
+            const timeDiff = today.getTime() - parsedDate.getTime();
+            const daysPassed = Math.floor(timeDiff / (1000 * 3600 * 24));
+            const daysRemaining = 30 - daysPassed;
+
+            rawDataset.push({
+              matricule: matricule.toString().trim(),
+              client: row[colClient] ? row[colClient].toString().trim() : "N/A",
+              chauffeur: row[colChauffeur] ? row[colChauffeur].toString().trim() : "N/A",
+              dateSortie: parsedDate.toLocaleDateString('fr-FR'),
+              daysPassed: Math.max(0, daysPassed),
+              daysRemaining: daysRemaining,
+              status: daysRemaining <= 3 ? "CRITICAL" : (daysRemaining <= 10 ? "WARNING" : "SAFE")
+            });
+          }
+        });
+
+        applyFilters();
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function parseDate(val) {
+      if (val instanceof Date) return val;
+      if (typeof val === "string") {
+        const parts = val.split(/[\/\-\s:]/);
+        if (parts.length >= 3) {
+          // DD/MM/YYYY support
+          return new Date(parts[2].length === 4 ? parts[2] : `20${parts[2]}`, parts[1] - 1, parts[0]);
+        }
+      }
+      return null;
+    }
+
+    function applyFilters() {
+      const search = document.getElementById('searchInput').value.toLowerCase();
+      const statusFilter = document.getElementById('filterStatus').value;
+
+      filteredDataset = rawDataset.filter(item => {
+        const matchesSearch = item.matricule.toLowerCase().includes(search) ||
+                              item.client.toLowerCase().includes(search) ||
+                              item.chauffeur.toLowerCase().includes(search);
+
+        const matchesStatus = statusFilter === "ALL" || item.status === statusFilter;
+        return matchesSearch && matchesStatus;
+      });
+
+      // Sort by urgency: lowest days remaining first
+      filteredDataset.sort((a, b) => a.daysRemaining - b.daysRemaining);
+
+      updateKPIs();
+      renderTable();
+    }
+
+    function updateKPIs() {
+      document.getElementById('kpiTotal').innerText = rawDataset.length;
+      document.getElementById('kpiCritical').innerText = rawDataset.filter(i => i.status === "CRITICAL").length;
+      document.getElementById('kpiWarning').innerText = rawDataset.filter(i => i.status === "WARNING").length;
+      document.getElementById('kpiSafe').innerText = rawDataset.filter(i => i.status === "SAFE").length;
+    }
+
+    function renderTable() {
       const tbody = document.getElementById('tableBody');
       tbody.innerHTML = '';
-      list.forEach((item, index) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td style="color:#9ca3af;">${list.length - index}</td>
-          <td class="plate-text">${item.matricule}</td>
-          <td class="zone-text">${item.zone}</td>
-          <td style="color:#9ca3af; font-size:11px;">${item.time}</td>
-          <td style="text-align:right;"><button class="btn-delete" onclick="removeItem(${index})">✕</button></td>
+
+      if (filteredDataset.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-500">No matching trailers found.</td></tr>`;
+        return;
+      }
+
+      filteredDataset.forEach(row => {
+        let badgeClass = "bg-emerald-900/60 text-emerald-300 border-emerald-700";
+        let statusText = `${row.daysRemaining} days left`;
+
+        if (row.status === "CRITICAL") {
+          badgeClass = "bg-rose-900/60 text-rose-300 border-rose-700 animate-pulse";
+          statusText = row.daysRemaining < 0 ? `EXPIRED (${Math.abs(row.daysRemaining)}d)` : `ALERT: ${row.daysRemaining}d left`;
+        } else if (row.status === "WARNING") {
+          badgeClass = "bg-amber-900/60 text-amber-300 border-amber-700";
+        }
+
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-700/40 transition">
+            <td class="py-3 px-4 font-bold text-yellow-400">${row.matricule}</td>
+            <td class="py-3 px-4">${row.client}</td>
+            <td class="py-3 px-4 text-slate-400">${row.chauffeur}</td>
+            <td class="py-3 px-4">${row.dateSortie}</td>
+            <td class="py-3 px-4 font-semibold text-slate-200">${row.daysPassed} days</td>
+            <td class="py-3 px-4 font-bold ${row.daysRemaining <= 3 ? 'text-rose-400' : 'text-slate-100'}">${row.daysRemaining} days</td>
+            <td class="py-3 px-4 text-center">
+              <span class="inline-block px-2.5 py-1 rounded-full text-[11px] font-bold border ${badgeClass}">
+                ${statusText}
+              </span>
+            </td>
+          </tr>
         `;
-        tbody.appendChild(tr);
       });
-      document.getElementById('counter').innerText = list.length;
-      localStorage.setItem('sjl_scanned_list', JSON.stringify(list));
     }
 
-    async function toggleCamera() {
-      const btn = document.getElementById('toggleBtn');
-      const badge = document.getElementById('statusBadge');
-
-      if (!isRunning) {
-        try {
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 } },
-            audio: false
-          });
-          document.getElementById('cameraStream').srcObject = stream;
-          isRunning = true;
-          btn.innerText = "⏹ Stop Camera";
-          btn.classList.add('active');
-          badge.innerText = "Camera Active";
-        } catch (err) {
-          alert("Camera Error: " + err.message);
-          badge.innerText = "Camera Denied";
-        }
-      } else {
-        if (stream) {
-          stream.getTracks().forEach(track => track.stop());
-        }
-        document.getElementById('cameraStream').srcObject = null;
-        isRunning = false;
-        btn.innerText = "📷 Start Camera";
-        btn.classList.remove('active');
-        badge.innerText = "Stopped";
-      }
-    }
-
-    function addTrailer(matricule) {
-      matricule = matricule.trim().toUpperCase();
-      if (!matricule) return;
-      
-      const zone = document.getElementById('zoneSelect').value;
-      const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-      // Check if already in list
-      const exists = list.some(t => t.matricule.replace(/\s+/g, '') === matricule.replace(/\s+/g, ''));
-      if (exists) {
-        alert("Trailers already logged: " + matricule);
+    function exportReport() {
+      if (filteredDataset.length === 0) {
+        alert("No data to export!");
         return;
       }
-
-      list.unshift({ matricule, zone, time });
-      renderList();
+      const ws = XLSX.utils.json_to_sheet(filteredDataset);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Triptyque_Compliance");
+      XLSX.writeFile(wb, `SJL_Triptyque_Alerts_${new Date().toISOString().split('T')[0]}.xlsx`);
     }
-
-    function addManual() {
-      const input = document.getElementById('manualInput');
-      addTrailer(input.value);
-      input.value = '';
-    }
-
-    document.getElementById('manualInput').addEventListener('keypress', function (e) {
-      if (e.key === 'Enter') addManual();
-    });
-
-    function removeItem(index) {
-      list.splice(index, 1);
-      renderList();
-    }
-
-    function exportCSV() {
-      if (list.length === 0) {
-        alert("List is empty!");
-        return;
-      }
-      const today = new Date().toISOString().split('T')[0];
-      let csvContent = "data:text/csv;charset=utf-8,DATE;MATRICULE;LIEU;Dated'arriveePort;DateSORTIEPort;JOURRESTANTS\n";
-
-      list.forEach(row => {
-        csvContent += `${today};${row.matricule};${row.zone};;;\n`;
-      });
-
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `SP_${today}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-
-    renderList();
   </script>
 </body>
 </html>
