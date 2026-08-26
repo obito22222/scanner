@@ -7,6 +7,9 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <style>
+    .drag-over { border-color: #3b82f6 !important; background-color: rgba(30, 58, 138, 0.3) !important; }
+  </style>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans">
 
@@ -24,8 +27,8 @@
     
     <div class="flex items-center space-x-3">
       <label class="cursor-pointer bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-4 py-2.5 rounded-lg shadow flex items-center gap-2 transition">
-        <i class="fa-solid fa-file-excel"></i> Load Tanger Med Import File
-        <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleFileUpload(event)">
+        <i class="fa-solid fa-file-excel"></i> Load Import File (XLSX / CSV)
+        <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleFileSelect(event)">
       </label>
       <button onclick="exportReport()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-4 py-2.5 rounded-lg shadow flex items-center gap-2 transition">
         <i class="fa-solid fa-download"></i> Export Alert List
@@ -88,8 +91,8 @@
       </div>
     </div>
 
-    <!-- Data Table -->
-    <div class="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow">
+    <!-- Dropzone & Table Container -->
+    <div id="dropZone" class="bg-slate-800 border-2 border-dashed border-slate-700 rounded-xl overflow-hidden shadow transition-all duration-200">
       <div class="overflow-x-auto">
         <table class="w-full text-left text-xs text-slate-300">
           <thead class="bg-slate-900/80 text-slate-400 uppercase font-semibold border-b border-slate-700">
@@ -105,9 +108,10 @@
           </thead>
           <tbody id="tableBody" class="divide-y divide-slate-700/60 font-medium">
             <tr>
-              <td colspan="7" class="text-center py-10 text-slate-500">
-                <i class="fa-solid fa-arrow-up-from-bracket text-2xl mb-2 block"></i>
-                Please upload the Tanger Med <strong>Import</strong> Excel file to compute Triptyques.
+              <td colspan="7" class="text-center py-14 text-slate-400">
+                <i class="fa-solid fa-cloud-arrow-up text-3xl mb-3 text-blue-400 block"></i>
+                <span class="text-sm font-semibold text-slate-200">Drag & Drop your Tanger Med <strong class="text-blue-400">Import 01-2026.xlsx / .csv</strong> here</span>
+                <p class="text-xs text-slate-500 mt-1">or click the blue button above to select the file</p>
               </td>
             </tr>
           </tbody>
@@ -121,72 +125,135 @@
     let rawDataset = [];
     let filteredDataset = [];
 
-    function handleFileUpload(e) {
+    // Drag & Drop Setup
+    const dropZone = document.getElementById('dropZone');
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+      window.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.classList.add('drag-over');
+      }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      window.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.classList.remove('drag-over');
+      }, false);
+    });
+
+    window.addEventListener('drop', (e) => {
+      const dt = e.dataTransfer;
+      const files = dt.files;
+      if (files.length > 0) {
+        processFile(files[0]);
+      }
+    });
+
+    function handleFileSelect(e) {
       const file = e.target.files[0];
-      if (!file) return;
+      if (file) processFile(file);
+    }
 
+    function processFile(file) {
       const reader = new FileReader();
+
       reader.onload = function(evt) {
-        const data = new Uint8Array(evt.target.result);
-        const workbook = XLSX.read(data, { type: 'array', cellDates: true });
-        
-        rawDataset = [];
+        try {
+          const data = new Uint8Array(evt.target.result);
+          const workbook = XLSX.read(data, { type: 'array', cellDates: true, raw: false });
 
-        // Parse across all sheets in the Import workbook
-        workbook.SheetNames.forEach(sheetName => {
-          const sheet = workbook.Sheets[sheetName];
-          const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-          
-          if (rows.length < 2) return;
+          rawDataset = [];
 
-          // Header index mapping
-          const headers = rows[0].map(h => (h ? h.toString().toLowerCase().trim() : ""));
-          const colMatricule = headers.findIndex(h => h.includes("matricule"));
-          const colClient = headers.findIndex(h => h.includes("client"));
-          const colChauffeur = headers.findIndex(h => h.includes("chauffeur"));
-          const colSortie = headers.findIndex(h => h.includes("sortie") || h.includes("date de sortie"));
+          workbook.SheetNames.forEach(sheetName => {
+            const sheet = workbook.Sheets[sheetName];
+            const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
 
-          for (let i = 1; i < rows.length; i++) {
-            const row = rows[i];
-            const matricule = row[colMatricule];
-            const dateSortie = row[colSortie];
+            if (rows.length < 2) return;
 
-            if (!matricule || !dateSortie) continue;
+            // Normalize header names (lowercase, remove spaces and accents)
+            let colMatricule = -1, colClient = -1, colChauffeur = -1, colSortie = -1;
 
-            const parsedDate = parseDate(dateSortie);
-            if (!parsedDate) continue;
+            for (let r = 0; r < Math.min(5, rows.length); r++) {
+              const headers = rows[r].map(h => (h ? h.toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim() : ""));
+              
+              if (colMatricule === -1) colMatricule = headers.findIndex(h => h.includes("matricule") || h.includes("remorque") || h.includes("tracteur"));
+              if (colClient === -1) colClient = headers.findIndex(h => h.includes("client") || h.includes("destinataire"));
+              if (colChauffeur === -1) colChauffeur = headers.findIndex(h => h.includes("chauffeur") || h.includes("conducteur"));
+              if (colSortie === -1) colSortie = headers.findIndex(h => h.includes("sortie") || h.includes("date") || h.includes("arrivee"));
 
-            const today = new Date();
-            const timeDiff = today.getTime() - parsedDate.getTime();
-            const daysPassed = Math.floor(timeDiff / (1000 * 3600 * 24));
-            const daysRemaining = 30 - daysPassed;
+              if (colMatricule !== -1 && colSortie !== -1) {
+                // Parse rows starting below header row
+                for (let i = r + 1; i < rows.length; i++) {
+                  const row = rows[i];
+                  const matricule = row[colMatricule];
+                  const dateSortie = row[colSortie];
 
-            rawDataset.push({
-              matricule: matricule.toString().trim(),
-              client: row[colClient] ? row[colClient].toString().trim() : "N/A",
-              chauffeur: row[colChauffeur] ? row[colChauffeur].toString().trim() : "N/A",
-              dateSortie: parsedDate.toLocaleDateString('fr-FR'),
-              daysPassed: Math.max(0, daysPassed),
-              daysRemaining: daysRemaining,
-              status: daysRemaining <= 3 ? "CRITICAL" : (daysRemaining <= 10 ? "WARNING" : "SAFE")
-            });
+                  if (!matricule || matricule.toString().trim() === "") continue;
+
+                  const parsedDate = parseDate(dateSortie);
+                  const today = new Date();
+                  
+                  let daysPassed = 0;
+                  let daysRemaining = 30;
+
+                  if (parsedDate) {
+                    const timeDiff = today.getTime() - parsedDate.getTime();
+                    daysPassed = Math.floor(timeDiff / (1000 * 3600 * 24));
+                    daysRemaining = 30 - daysPassed;
+                  }
+
+                  rawDataset.push({
+                    matricule: matricule.toString().trim(),
+                    client: (colClient !== -1 && row[colClient]) ? row[colClient].toString().trim() : "SJL Operation",
+                    chauffeur: (colChauffeur !== -1 && row[colChauffeur]) ? row[colChauffeur].toString().trim() : "-",
+                    dateSortie: parsedDate ? parsedDate.toLocaleDateString('fr-FR') : (dateSortie ? dateSortie.toString() : "-"),
+                    daysPassed: Math.max(0, daysPassed),
+                    daysRemaining: daysRemaining,
+                    status: daysRemaining <= 3 ? "CRITICAL" : (daysRemaining <= 10 ? "WARNING" : "SAFE")
+                  });
+                }
+                break;
+              }
+            }
+          });
+
+          if (rawDataset.length === 0) {
+            alert("No valid trailer records found. Please ensure the file contains columns for 'Matricule' and 'Date de Sortie'.");
+            return;
           }
-        });
 
-        applyFilters();
+          applyFilters();
+        } catch (err) {
+          alert("Error parsing file: " + err.message);
+          console.error(err);
+        }
       };
+
       reader.readAsArrayBuffer(file);
     }
 
     function parseDate(val) {
-      if (val instanceof Date) return val;
-      if (typeof val === "string") {
-        const parts = val.split(/[\/\-\s:]/);
-        if (parts.length >= 3) {
-          // DD/MM/YYYY support
-          return new Date(parts[2].length === 4 ? parts[2] : `20${parts[2]}`, parts[1] - 1, parts[0]);
-        }
+      if (!val) return null;
+      if (val instanceof Date && !isNaN(val)) return val;
+
+      const str = val.toString().trim();
+      // Match DD/MM/YYYY or DD-MM-YYYY or YYYY-MM-DD
+      const dmy = str.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})/);
+      if (dmy) {
+        const year = dmy[3].length === 2 ? `20${dmy[3]}` : dmy[3];
+        return new Date(year, parseInt(dmy[2]) - 1, parseInt(dmy[1]));
       }
+      const ymd = str.match(/^(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})/);
+      if (ymd) {
+        return new Date(ymd[1], parseInt(ymd[2]) - 1, parseInt(ymd[3]));
+      }
+
+      const timestamp = Date.parse(str);
+      if (!isNaN(timestamp)) return new Date(timestamp);
+
       return null;
     }
 
@@ -203,7 +270,6 @@
         return matchesSearch && matchesStatus;
       });
 
-      // Sort by urgency: lowest days remaining first
       filteredDataset.sort((a, b) => a.daysRemaining - b.daysRemaining);
 
       updateKPIs();
@@ -231,7 +297,7 @@
         let statusText = `${row.daysRemaining} days left`;
 
         if (row.status === "CRITICAL") {
-          badgeClass = "bg-rose-900/60 text-rose-300 border-rose-700 animate-pulse";
+          badgeClass = "bg-rose-900/60 text-rose-300 border-rose-700 font-bold";
           statusText = row.daysRemaining < 0 ? `EXPIRED (${Math.abs(row.daysRemaining)}d)` : `ALERT: ${row.daysRemaining}d left`;
         } else if (row.status === "WARNING") {
           badgeClass = "bg-amber-900/60 text-amber-300 border-amber-700";
@@ -246,7 +312,7 @@
             <td class="py-3 px-4 font-semibold text-slate-200">${row.daysPassed} days</td>
             <td class="py-3 px-4 font-bold ${row.daysRemaining <= 3 ? 'text-rose-400' : 'text-slate-100'}">${row.daysRemaining} days</td>
             <td class="py-3 px-4 text-center">
-              <span class="inline-block px-2.5 py-1 rounded-full text-[11px] font-bold border ${badgeClass}">
+              <span class="inline-block px-2.5 py-1 rounded-full text-[11px] border ${badgeClass}">
                 ${statusText}
               </span>
             </td>
