@@ -3,50 +3,87 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SJL Triptyque Master Control</title>
+  <title>SJL Triptyque 360° | Multi-User Fleet Portal</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-  <style>
-    .drag-over { border-color: #3b82f6 !important; background-color: rgba(30, 58, 138, 0.3) !important; }
-  </style>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans">
+
+  <script>
+    // ⚠️ PASTE YOUR FIREBASE REALTIME DATABASE URL HERE:
+    const DB_URL = "https://sjl-fleet-triptyque-default-rtdb.firebaseio.com";
+  </script>
 
   <!-- Top Navbar -->
   <header class="bg-slate-800 border-b border-slate-700 px-6 py-4 flex flex-wrap justify-between items-center gap-4">
     <div class="flex items-center space-x-3">
-      <div class="bg-blue-600 text-white p-2 rounded-lg">
-        <i class="fa-solid fa-truck-ramp-box text-xl"></i>
+      <div class="bg-blue-600 text-white p-2.5 rounded-lg shadow-md">
+        <i class="fa-solid fa-truck-fast text-xl"></i>
       </div>
       <div>
-        <h1 class="text-lg font-bold text-white tracking-wide">SJL Triptyque 360°</h1>
-        <p class="text-xs text-slate-400">Fleet Customs Stay & Risk Monitor</p>
+        <div class="flex items-center gap-2">
+          <h1 class="text-lg font-bold text-white tracking-wide">SJL Live Fleet Portal</h1>
+          <span class="inline-flex items-center gap-1 bg-emerald-950 text-emerald-400 border border-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> LIVE SYNC
+          </span>
+        </div>
+        <p class="text-xs text-slate-400">Collaborative Port Exits & Triptyque Countdown</p>
       </div>
     </div>
     
     <div class="flex items-center space-x-3">
-      <label class="cursor-pointer bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-4 py-2.5 rounded-lg shadow flex items-center gap-2 transition">
-        <i class="fa-solid fa-file-excel"></i> Load Import File (XLSX / CSV)
-        <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleFileSelect(event)">
-      </label>
-      <button onclick="exportReport()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-4 py-2.5 rounded-lg shadow flex items-center gap-2 transition">
-        <i class="fa-solid fa-download"></i> Export Alert List
+      <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-4 py-2.5 rounded-lg shadow transition flex items-center gap-2">
+        <i class="fa-solid fa-file-excel"></i> Export Excel (.xlsx)
       </button>
     </div>
   </header>
 
-  <!-- Main Container -->
-  <main class="flex-1 p-6 max-w-7xl w-full mx-auto space-y-6">
+  <main class="flex-1 p-4 sm:p-6 max-w-7xl w-full mx-auto space-y-6">
 
-    <!-- KPI Summary Cards -->
+    <!-- Add Trailer Form -->
+    <div class="bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-lg">
+      <div class="flex items-center gap-2 mb-3">
+        <i class="fa-solid fa-circle-plus text-blue-400"></i>
+        <h2 class="text-sm font-bold text-white uppercase tracking-wider">Log Port Exit (Sortie Port)</h2>
+      </div>
+
+      <form id="entryForm" onsubmit="addTrailer(event)" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">Matricule Remorque *</label>
+          <input type="text" id="inputMatricule" required placeholder="e.g. R 1234 BCD or 7424-011" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-yellow-300 font-bold uppercase focus:outline-none focus:border-blue-500">
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">Client / Destination</label>
+          <input type="text" id="inputClient" placeholder="e.g. TFZ / Renault / Lear" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">Chauffeur / Tractionnaire</label>
+          <input type="text" id="inputChauffeur" placeholder="Nom du chauffeur" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">Date Sortie Port *</label>
+          <div class="flex gap-2">
+            <input type="date" id="inputDate" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+            <button type="submit" id="submitBtn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-5 py-2 rounded-lg text-sm transition shadow flex items-center justify-center">
+              <span>Add</span>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Live KPIs -->
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
       <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl flex items-center justify-between">
         <div>
-          <p class="text-xs uppercase font-semibold text-slate-400">Total Tracked Units</p>
+          <p class="text-xs uppercase font-semibold text-slate-400">Total Tracked</p>
           <h2 id="kpiTotal" class="text-2xl font-bold text-white mt-1">0</h2>
         </div>
-        <i class="fa-solid fa-cubes text-slate-500 text-2xl"></i>
+        <i class="fa-solid fa-truck text-slate-500 text-2xl"></i>
       </div>
 
       <div class="bg-rose-950/40 border border-rose-800/50 p-4 rounded-xl flex items-center justify-between">
@@ -67,51 +104,48 @@
 
       <div class="bg-emerald-950/40 border border-emerald-800/50 p-4 rounded-xl flex items-center justify-between">
         <div>
-          <p class="text-xs uppercase font-semibold text-emerald-400">In Safe Range (&gt; 10 Days)</p>
+          <p class="text-xs uppercase font-semibold text-emerald-400">Safe Range (&gt; 10 Days)</p>
           <h2 id="kpiSafe" class="text-2xl font-bold text-emerald-400 mt-1">0</h2>
         </div>
         <i class="fa-solid fa-shield-halved text-emerald-500 text-2xl"></i>
       </div>
     </div>
 
-    <!-- Filters & Search Bar -->
-    <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl flex flex-wrap gap-4 items-center justify-between">
+    <!-- Search & Filters -->
+    <div class="flex flex-wrap gap-3 items-center justify-between">
       <div class="relative flex-1 min-w-[240px]">
         <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-xs"></i>
-        <input type="text" id="searchInput" oninput="applyFilters()" placeholder="Search trailer, client, driver..." class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-9 pr-4 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+        <input type="text" id="searchInput" oninput="render()" placeholder="Filter by matricule, client, or driver..." class="w-full bg-slate-800 border border-slate-700 rounded-lg pl-9 pr-4 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
       </div>
 
-      <div class="flex items-center gap-2">
-        <select id="filterStatus" onchange="applyFilters()" class="bg-slate-900 border border-slate-700 text-slate-300 text-xs rounded-lg px-3 py-2.5 focus:outline-none focus:border-blue-500">
-          <option value="ALL">All Risk Levels</option>
-          <option value="CRITICAL">🔴 Critical (&le; 3 Days)</option>
-          <option value="WARNING">🟡 Warning (4-10 Days)</option>
-          <option value="SAFE">🟢 Safe (&gt; 10 Days)</option>
-        </select>
-      </div>
+      <select id="filterStatus" onchange="render()" class="bg-slate-800 border border-slate-700 text-slate-300 text-xs rounded-lg px-3 py-2.5 focus:outline-none focus:border-blue-500">
+        <option value="ALL">All Risk Levels</option>
+        <option value="CRITICAL">🔴 Critical (&le; 3 Days)</option>
+        <option value="WARNING">🟡 Warning (4-10 Days)</option>
+        <option value="SAFE">🟢 Safe (&gt; 10 Days)</option>
+      </select>
     </div>
 
-    <!-- Dropzone & Table Container -->
-    <div id="dropZone" class="bg-slate-800 border-2 border-dashed border-slate-700 rounded-xl overflow-hidden shadow transition-all duration-200">
+    <!-- Real-Time Shared Table -->
+    <div class="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow">
       <div class="overflow-x-auto">
         <table class="w-full text-left text-xs text-slate-300">
-          <thead class="bg-slate-900/80 text-slate-400 uppercase font-semibold border-b border-slate-700">
+          <thead class="bg-slate-900/90 text-slate-400 uppercase font-semibold border-b border-slate-700">
             <tr>
               <th class="py-3 px-4">Matricule</th>
-              <th class="py-3 px-4">Client</th>
+              <th class="py-3 px-4">Client / Localisation</th>
               <th class="py-3 px-4">Chauffeur</th>
-              <th class="py-3 px-4">Port Exit Date</th>
-              <th class="py-3 px-4">Days in Morocco</th>
-              <th class="py-3 px-4">Days Remaining</th>
+              <th class="py-3 px-4">Sortie Port</th>
+              <th class="py-3 px-4">Days in Maroc</th>
+              <th class="py-3 px-4">Triptyque Remaining</th>
               <th class="py-3 px-4 text-center">Status</th>
+              <th class="py-3 px-4 text-right">Action</th>
             </tr>
           </thead>
           <tbody id="tableBody" class="divide-y divide-slate-700/60 font-medium">
             <tr>
-              <td colspan="7" class="text-center py-14 text-slate-400">
-                <i class="fa-solid fa-cloud-arrow-up text-3xl mb-3 text-blue-400 block"></i>
-                <span class="text-sm font-semibold text-slate-200">Drag & Drop your Tanger Med <strong class="text-blue-400">Import 01-2026.xlsx / .csv</strong> here</span>
-                <p class="text-xs text-slate-500 mt-1">or click the blue button above to select the file</p>
+              <td colspan="8" class="text-center py-10 text-slate-500">
+                <i class="fa-solid fa-spinner fa-spin text-xl mb-2 block text-blue-400"></i> Connecting to multi-user database...
               </td>
             </tr>
           </tbody>
@@ -122,182 +156,125 @@
   </main>
 
   <script>
-    let rawDataset = [];
-    let filteredDataset = [];
+    let rawList = [];
+    document.getElementById('inputDate').value = new Date().toISOString().split('T')[0];
 
-    // Drag & Drop Setup
-    const dropZone = document.getElementById('dropZone');
-
-    ['dragenter', 'dragover'].forEach(eventName => {
-      window.addEventListener(eventName, (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        dropZone.classList.add('drag-over');
-      }, false);
-    });
-
-    ['dragleave', 'drop'].forEach(eventName => {
-      window.addEventListener(eventName, (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        dropZone.classList.remove('drag-over');
-      }, false);
-    });
-
-    window.addEventListener('drop', (e) => {
-      const dt = e.dataTransfer;
-      const files = dt.files;
-      if (files.length > 0) {
-        processFile(files[0]);
-      }
-    });
-
-    function handleFileSelect(e) {
-      const file = e.target.files[0];
-      if (file) processFile(file);
-    }
-
-    function processFile(file) {
-      const reader = new FileReader();
-
-      reader.onload = function(evt) {
-        try {
-          const data = new Uint8Array(evt.target.result);
-          const workbook = XLSX.read(data, { type: 'array', cellDates: true, raw: false });
-
-          rawDataset = [];
-
-          workbook.SheetNames.forEach(sheetName => {
-            const sheet = workbook.Sheets[sheetName];
-            const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
-
-            if (rows.length < 2) return;
-
-            // Normalize header names (lowercase, remove spaces and accents)
-            let colMatricule = -1, colClient = -1, colChauffeur = -1, colSortie = -1;
-
-            for (let r = 0; r < Math.min(5, rows.length); r++) {
-              const headers = rows[r].map(h => (h ? h.toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim() : ""));
-              
-              if (colMatricule === -1) colMatricule = headers.findIndex(h => h.includes("matricule") || h.includes("remorque") || h.includes("tracteur"));
-              if (colClient === -1) colClient = headers.findIndex(h => h.includes("client") || h.includes("destinataire"));
-              if (colChauffeur === -1) colChauffeur = headers.findIndex(h => h.includes("chauffeur") || h.includes("conducteur"));
-              if (colSortie === -1) colSortie = headers.findIndex(h => h.includes("sortie") || h.includes("date") || h.includes("arrivee"));
-
-              if (colMatricule !== -1 && colSortie !== -1) {
-                // Parse rows starting below header row
-                for (let i = r + 1; i < rows.length; i++) {
-                  const row = rows[i];
-                  const matricule = row[colMatricule];
-                  const dateSortie = row[colSortie];
-
-                  if (!matricule || matricule.toString().trim() === "") continue;
-
-                  const parsedDate = parseDate(dateSortie);
-                  const today = new Date();
-                  
-                  let daysPassed = 0;
-                  let daysRemaining = 30;
-
-                  if (parsedDate) {
-                    const timeDiff = today.getTime() - parsedDate.getTime();
-                    daysPassed = Math.floor(timeDiff / (1000 * 3600 * 24));
-                    daysRemaining = 30 - daysPassed;
-                  }
-
-                  rawDataset.push({
-                    matricule: matricule.toString().trim(),
-                    client: (colClient !== -1 && row[colClient]) ? row[colClient].toString().trim() : "SJL Operation",
-                    chauffeur: (colChauffeur !== -1 && row[colChauffeur]) ? row[colChauffeur].toString().trim() : "-",
-                    dateSortie: parsedDate ? parsedDate.toLocaleDateString('fr-FR') : (dateSortie ? dateSortie.toString() : "-"),
-                    daysPassed: Math.max(0, daysPassed),
-                    daysRemaining: daysRemaining,
-                    status: daysRemaining <= 3 ? "CRITICAL" : (daysRemaining <= 10 ? "WARNING" : "SAFE")
-                  });
-                }
-                break;
-              }
-            }
-          });
-
-          if (rawDataset.length === 0) {
-            alert("No valid trailer records found. Please ensure the file contains columns for 'Matricule' and 'Date de Sortie'.");
-            return;
-          }
-
-          applyFilters();
-        } catch (err) {
-          alert("Error parsing file: " + err.message);
-          console.error(err);
-        }
-      };
-
-      reader.readAsArrayBuffer(file);
-    }
-
-    function parseDate(val) {
-      if (!val) return null;
-      if (val instanceof Date && !isNaN(val)) return val;
-
-      const str = val.toString().trim();
-      // Match DD/MM/YYYY or DD-MM-YYYY or YYYY-MM-DD
-      const dmy = str.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})/);
-      if (dmy) {
-        const year = dmy[3].length === 2 ? `20${dmy[3]}` : dmy[3];
-        return new Date(year, parseInt(dmy[2]) - 1, parseInt(dmy[1]));
-      }
-      const ymd = str.match(/^(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})/);
-      if (ymd) {
-        return new Date(ymd[1], parseInt(ymd[2]) - 1, parseInt(ymd[3]));
-      }
-
-      const timestamp = Date.parse(str);
-      if (!isNaN(timestamp)) return new Date(timestamp);
-
-      return null;
-    }
-
-    function applyFilters() {
-      const search = document.getElementById('searchInput').value.toLowerCase();
-      const statusFilter = document.getElementById('filterStatus').value;
-
-      filteredDataset = rawDataset.filter(item => {
-        const matchesSearch = item.matricule.toLowerCase().includes(search) ||
-                              item.client.toLowerCase().includes(search) ||
-                              item.chauffeur.toLowerCase().includes(search);
-
-        const matchesStatus = statusFilter === "ALL" || item.status === statusFilter;
-        return matchesSearch && matchesStatus;
-      });
-
-      filteredDataset.sort((a, b) => a.daysRemaining - b.daysRemaining);
-
-      updateKPIs();
-      renderTable();
-    }
-
-    function updateKPIs() {
-      document.getElementById('kpiTotal').innerText = rawDataset.length;
-      document.getElementById('kpiCritical').innerText = rawDataset.filter(i => i.status === "CRITICAL").length;
-      document.getElementById('kpiWarning').innerText = rawDataset.filter(i => i.status === "WARNING").length;
-      document.getElementById('kpiSafe').innerText = rawDataset.filter(i => i.status === "SAFE").length;
-    }
-
-    function renderTable() {
-      const tbody = document.getElementById('tableBody');
-      tbody.innerHTML = '';
-
-      if (filteredDataset.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-500">No matching trailers found.</td></tr>`;
+    // Read live fleet directly from database
+    async function loadData() {
+      if (!DB_URL || DB_URL.includes("YOUR-PROJECT-NAME")) {
+        document.getElementById('tableBody').innerHTML = `<tr><td colspan="8" class="text-center py-6 text-amber-400 font-semibold">⚠️ Paste your Firebase Database URL into line 14 of index.html.</td></tr>`;
         return;
       }
 
-      filteredDataset.forEach(row => {
+      try {
+        const res = await fetch(`${DB_URL}/trailers.json`);
+        const data = await res.json();
+        
+        rawList = [];
+        if (data) {
+          Object.keys(data).forEach(key => {
+            const item = data[key];
+            const exitDate = new Date(item.dateSortie);
+            const today = new Date();
+            const diffDays = Math.floor((today - exitDate) / (1000 * 60 * 60 * 24));
+            const left = 30 - diffDays;
+
+            rawList.push({
+              id: key,
+              matricule: item.matricule,
+              client: item.client || "SJL Operations",
+              chauffeur: item.chauffeur || "-",
+              dateSortie: item.dateSortie,
+              daysPassed: Math.max(0, diffDays),
+              daysRemaining: left,
+              status: left <= 3 ? "CRITICAL" : (left <= 10 ? "WARNING" : "SAFE")
+            });
+          });
+        }
+        render();
+      } catch (err) {
+        console.error("Database connection error:", err);
+      }
+    }
+
+    async function addTrailer(e) {
+      e.preventDefault();
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`;
+
+      const payload = {
+        matricule: document.getElementById('inputMatricule').value.trim().toUpperCase(),
+        client: document.getElementById('inputClient').value.trim(),
+        chauffeur: document.getElementById('inputChauffeur').value.trim(),
+        dateSortie: document.getElementById('inputDate').value,
+        timestamp: new Date().toISOString()
+      };
+
+      try {
+        await fetch(`${DB_URL}/trailers.json`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        document.getElementById('inputMatricule').value = '';
+        document.getElementById('inputClient').value = '';
+        document.getElementById('inputChauffeur').value = '';
+        await loadData();
+      } catch (err) {
+        alert("Failed to save: " + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "Add";
+      }
+    }
+
+    async function deleteTrailer(id) {
+      if (!confirm("Remove this trailer from active monitoring?")) return;
+      try {
+        await fetch(`${DB_URL}/trailers/${id}.json`, { method: "DELETE" });
+        await loadData();
+      } catch (err) {
+        alert("Delete failed: " + err.message);
+      }
+    }
+
+    function render() {
+      const search = document.getElementById('searchInput').value.toLowerCase();
+      const filter = document.getElementById('filterStatus').value;
+
+      const filtered = rawList.filter(item => {
+        const matchesSearch = item.matricule.toLowerCase().includes(search) ||
+                              item.client.toLowerCase().includes(search) ||
+                              item.chauffeur.toLowerCase().includes(search);
+        const matchesStatus = filter === "ALL" || item.status === filter;
+        return matchesSearch && matchesStatus;
+      });
+
+      // Priority sort: lowest days remaining first
+      filtered.sort((a, b) => a.daysRemaining - b.daysRemaining);
+
+      // Update counters
+      document.getElementById('kpiTotal').innerText = rawList.length;
+      document.getElementById('kpiCritical').innerText = rawList.filter(i => i.status === "CRITICAL").length;
+      document.getElementById('kpiWarning').innerText = rawList.filter(i => i.status === "WARNING").length;
+      document.getElementById('kpiSafe').innerText = rawList.filter(i => i.status === "SAFE").length;
+
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = '';
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-slate-500">No matching trailers active.</td></tr>`;
+        return;
+      }
+
+      filtered.forEach(row => {
         let badgeClass = "bg-emerald-900/60 text-emerald-300 border-emerald-700";
         let statusText = `${row.daysRemaining} days left`;
 
         if (row.status === "CRITICAL") {
-          badgeClass = "bg-rose-900/60 text-rose-300 border-rose-700 font-bold";
+          badgeClass = "bg-rose-900/70 text-rose-300 border-rose-700 font-bold animate-pulse";
           statusText = row.daysRemaining < 0 ? `EXPIRED (${Math.abs(row.daysRemaining)}d)` : `ALERT: ${row.daysRemaining}d left`;
         } else if (row.status === "WARNING") {
           badgeClass = "bg-amber-900/60 text-amber-300 border-amber-700";
@@ -309,28 +286,47 @@
             <td class="py-3 px-4">${row.client}</td>
             <td class="py-3 px-4 text-slate-400">${row.chauffeur}</td>
             <td class="py-3 px-4">${row.dateSortie}</td>
-            <td class="py-3 px-4 font-semibold text-slate-200">${row.daysPassed} days</td>
+            <td class="py-3 px-4 font-semibold text-slate-300">${row.daysPassed} days</td>
             <td class="py-3 px-4 font-bold ${row.daysRemaining <= 3 ? 'text-rose-400' : 'text-slate-100'}">${row.daysRemaining} days</td>
             <td class="py-3 px-4 text-center">
               <span class="inline-block px-2.5 py-1 rounded-full text-[11px] border ${badgeClass}">
                 ${statusText}
               </span>
             </td>
+            <td class="py-3 px-4 text-right">
+              <button onclick="deleteTrailer('${row.id}')" title="Discharge / Exported" class="text-slate-500 hover:text-rose-400 p-1 transition">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </td>
           </tr>
         `;
       });
     }
 
-    function exportReport() {
-      if (filteredDataset.length === 0) {
-        alert("No data to export!");
+    function exportToExcel() {
+      if (rawList.length === 0) {
+        alert("No fleet data to export!");
         return;
       }
-      const ws = XLSX.utils.json_to_sheet(filteredDataset);
+      const exportData = rawList.map(item => ({
+        "MATRICULE": item.matricule,
+        "CLIENT / DESTINATION": item.client,
+        "CHAUFFEUR": item.chauffeur,
+        "DATE SORTIE PORT": item.dateSortie,
+        "JOURS PASSES": item.daysPassed,
+        "JOURS RESTANTS TRIPTYQUE": item.daysRemaining,
+        "STATUT": item.status
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(exportData);
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Triptyque_Compliance");
-      XLSX.writeFile(wb, `SJL_Triptyque_Alerts_${new Date().toISOString().split('T')[0]}.xlsx`);
+      XLSX.utils.book_append_sheet(wb, ws, "Triptyque_Situation");
+      XLSX.writeFile(wb, `SJL_Triptyque_Master_${new Date().toISOString().split('T')[0]}.xlsx`);
     }
+
+    // Auto-refresh every 30 seconds for all users
+    loadData();
+    setInterval(loadData, 30000);
   </script>
 </body>
 </html>
