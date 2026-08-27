@@ -3,10 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SJL Triptyque 360° | Plateforme Collaborative</title>
+  <title>SJL Hub | Port Tanger Med & Triptyque 360°</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <style>
+    .badge-ok { background-color: #065f46; color: #6ee7b7; border: 1px solid #059669; }
+    .badge-sans { background-color: #881337; color: #fda4af; border: 1px solid #e11d48; }
+    .badge-warn { background-color: #78350f; color: #fde68a; border: 1px solid #d97706; }
+    .badge-blue { background-color: #1e3a8a; color: #93c5fd; border: 1px solid #2563eb; }
+  </style>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans">
 
@@ -15,18 +21,16 @@
     const DB_URL = "https://sjl-fleet-triptyque-default-rtdb.firebaseio.com";
   </script>
 
-  <!-- ==================== 1. AUTHENTICATION (LOGIN / SIGNUP) MODAL ==================== -->
   <div id="authScreen" class="fixed inset-0 bg-slate-950/95 z-50 flex items-center justify-center p-4 backdrop-blur-md">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-6">
       <div class="text-center space-y-2">
         <div class="inline-flex bg-blue-600 p-3.5 rounded-2xl shadow-lg">
-          <i class="fa-solid fa-truck-ramp-box text-2xl text-white"></i>
+          <i class="fa-solid fa-ship text-2xl text-white"></i>
         </div>
-        <h2 class="text-xl font-bold text-white tracking-wide">SJL Triptyque Hub</h2>
-        <p class="text-xs text-slate-400">Authentification sécurisée à la plateforme</p>
+        <h2 class="text-xl font-bold text-white tracking-wide">SJL Live Fleet & Port Hub</h2>
+        <p class="text-xs text-slate-400">Port Tanger Med & Gestion Triptyque Douanes</p>
       </div>
 
-      <!-- Login Form -->
       <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
         <div>
           <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Nom d'utilisateur *</label>
@@ -40,7 +44,7 @@
 
         <div id="authError" class="text-rose-400 text-xs font-semibold hidden text-center"></div>
 
-        <button type="submit" id="loginBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 rounded-lg shadow-lg text-sm transition flex items-center justify-center gap-2">
+        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 rounded-lg shadow-lg text-sm transition flex items-center justify-center gap-2">
           <span>Se connecter</span>
           <i class="fa-solid fa-arrow-right"></i>
         </button>
@@ -51,61 +55,51 @@
         </p>
       </form>
 
-      <!-- Signup Form -->
       <form id="signupForm" onsubmit="handleSignup(event)" class="space-y-4 hidden">
         <div>
           <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Nom & Prénom / Identifiant *</label>
-          <input type="text" id="signupUsername" required placeholder="ex: yassine" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500">
+          <input type="text" id="signupUsername" required placeholder="ex: khalid" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500">
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Choisir un Mot de passe *</label>
+          <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Mot de passe *</label>
           <input type="password" id="signupPassword" required placeholder="••••••••" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500">
         </div>
 
-        <div class="bg-slate-900/80 p-3 rounded-lg border border-slate-700 text-[11px] text-amber-300">
-          <i class="fa-solid fa-info-circle mr-1"></i> Tout nouveau compte est créé en <strong>Opérateur (Lecture seule)</strong> en attendant l'attribution de votre rôle par Zouhair.
-        </div>
-
-        <button type="submit" id="signupBtn" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-lg shadow-lg text-sm transition flex items-center justify-center gap-2">
+        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-lg shadow-lg text-sm transition flex items-center justify-center gap-2">
           <span>Créer mon compte</span>
-          <i class="fa-solid fa-user-plus"></i>
         </button>
 
         <p class="text-center text-xs text-slate-400 pt-2">
-          Vous avez déjà un compte ? 
-          <button type="button" onclick="toggleAuthMode(false)" class="text-blue-400 font-bold hover:underline">Se connecter</button>
+          <button type="button" onclick="toggleAuthMode(false)" class="text-blue-400 font-bold hover:underline">Retour à la connexion</button>
         </p>
       </form>
     </div>
   </div>
 
-  <!-- ==================== 2. MAIN APPLICATION NAVBAR ==================== -->
-  <header class="bg-slate-800 border-b border-slate-700 px-6 py-4 flex flex-wrap justify-between items-center gap-4">
+  <header class="bg-slate-800 border-b border-slate-700 px-6 py-3.5 flex flex-wrap justify-between items-center gap-4">
     <div class="flex items-center space-x-3">
-      <div class="bg-blue-600 text-white p-2.5 rounded-lg shadow-md">
-        <i class="fa-solid fa-truck-fast text-xl"></i>
+      <div class="bg-blue-600 text-white p-2.5 rounded-lg shadow">
+        <i class="fa-solid fa-truck-ramp-box text-xl"></i>
       </div>
       <div>
         <div class="flex items-center gap-2">
-          <h1 class="text-lg font-bold text-white tracking-wide">SJL Live Fleet Portal</h1>
+          <h1 class="text-lg font-bold text-white tracking-wide">SJL Live Fleet & Port Engine</h1>
           <span class="inline-flex items-center gap-1 bg-emerald-950 text-emerald-400 border border-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> LIVE
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> SYNC LIVE
           </span>
         </div>
-        <p class="text-xs text-slate-400">Suivi Triptyque Douanes Tanger Med</p>
+        <p class="text-xs text-slate-400">Tanger Med Port Flow • Dédouanement • Plis Documentaires • Triptyque</p>
       </div>
     </div>
     
     <div class="flex items-center space-x-3">
-      <!-- Supervisor Admin Button with User Badge Counter -->
       <button id="adminBtn" onclick="toggleAdminModal()" class="hidden bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold px-3 py-2 rounded-lg transition flex items-center gap-2 shadow">
         <i class="fa-solid fa-users-gear"></i>
-        <span>Gérer Utilisateurs</span>
+        <span>Gérer Rôles</span>
         <span id="pendingBadge" class="hidden bg-rose-500 text-white font-bold text-[10px] px-1.5 py-0.2 rounded-full">0</span>
       </button>
 
-      <!-- User Badge -->
       <div class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs flex items-center gap-2">
         <i class="fa-solid fa-user-shield text-blue-400"></i>
         <div>
@@ -123,7 +117,17 @@
     </div>
   </header>
 
-  <!-- ==================== 3. SUPERVISOR USER MANAGEMENT MODAL ==================== -->
+  <div class="bg-slate-800/80 border-b border-slate-700 px-6 py-2 flex gap-4">
+    <button id="tabPortBtn" onclick="switchTab('PORT')" class="text-sm font-bold text-blue-400 border-b-2 border-blue-500 pb-2 px-2 flex items-center gap-2 transition">
+      <i class="fa-solid fa-ship"></i>
+      <span>1. Suivi Opérations Port Tanger Med (Saisie Khalid)</span>
+    </button>
+    <button id="tabTriptyqueBtn" onclick="switchTab('TRIPTYQUE')" class="text-sm font-semibold text-slate-400 hover:text-slate-200 pb-2 px-2 flex items-center gap-2 transition">
+      <i class="fa-solid fa-clock-rotate-left"></i>
+      <span>2. Master Triptyque & Planning Export (Chargés Clientèle)</span>
+    </button>
+  </div>
+
   <div id="adminModal" class="fixed inset-0 bg-slate-950/90 z-40 hidden flex items-center justify-center p-4 backdrop-blur-sm">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 max-w-2xl w-full shadow-2xl space-y-4">
       <div class="flex justify-between items-center border-b border-slate-700 pb-3">
@@ -143,129 +147,253 @@
               <th class="py-2.5 px-3 text-right">Modifier Rôle</th>
             </tr>
           </thead>
-          <tbody id="usersTableBody" class="divide-y divide-slate-700">
-            <!-- Populated dynamically -->
-          </tbody>
+          <tbody id="usersTableBody" class="divide-y divide-slate-700"></tbody>
         </table>
       </div>
     </div>
   </div>
 
-  <!-- ==================== 4. MAIN APPLICATION DASHBOARD ==================== -->
   <main class="flex-1 p-4 sm:p-6 max-w-7xl w-full mx-auto space-y-6">
 
-    <!-- Saisie Section (Restricted to PORT_OPS, ADMIN & SUPERVISOR) -->
-    <div id="portOpsSection" class="hidden bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-lg">
-      <div class="flex items-center gap-2 mb-3">
-        <i class="fa-solid fa-circle-plus text-blue-400"></i>
-        <h2 class="text-sm font-bold text-white uppercase tracking-wider">Saisie Sortie Port (Khalid & Équipe Port)</h2>
-      </div>
+    <div id="viewPort" class="space-y-6">
 
-      <form id="entryForm" onsubmit="addTrailer(event)" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-        <div>
-          <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">Matricule Remorque *</label>
-          <input type="text" id="inputMatricule" required placeholder="ex: R 1234 BCD ou 7424-011" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-yellow-300 font-bold uppercase focus:outline-none focus:border-blue-500">
+      <div id="portOpsSection" class="hidden bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-lg">
+        <div class="flex items-center gap-2 mb-3">
+          <i class="fa-solid fa-circle-plus text-blue-400"></i>
+          <h2 class="text-sm font-bold text-white uppercase tracking-wider">Saisie Complète Flux Port (Exploitation Tanger Med)</h2>
         </div>
 
-        <div>
-          <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">Client / Destination</label>
-          <input type="text" id="inputClient" placeholder="ex: TFZ / Renault / Lear" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
-        </div>
+        <form id="entryForm" onsubmit="addFullTrailer(event)" class="space-y-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">Matricule Remorque *</label>
+              <input type="text" id="inputMatricule" required placeholder="ex: R 4221 BCP ou 7424-011" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-yellow-300 font-bold uppercase focus:outline-none focus:border-blue-500">
+            </div>
 
-        <div>
-          <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">Chauffeur / Tractionnaire</label>
-          <input type="text" id="inputChauffeur" placeholder="Nom du chauffeur" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
-        </div>
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">Client *</label>
+              <input type="text" id="inputClient" required placeholder="ex: RENAULT / FAURECIA / LEONI" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+            </div>
 
-        <div>
-          <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">Date Sortie Port *</label>
-          <div class="flex gap-2">
-            <input type="date" id="inputDate" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
-            <button type="submit" id="submitBtn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-5 py-2 rounded-lg text-sm transition shadow flex items-center justify-center">
-              <span>Ajouter</span>
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">Transitaire</label>
+              <input type="text" id="inputTransitaire" placeholder="ex: SJL / TTAM / MATRANORD" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">Date Arrivée Port *</label>
+              <input type="datetime-local" id="inputDateArrivee" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">État Dédouanement</label>
+              <select id="inputEtatDedouanement" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+                <option value="Bien Dédouanée">Bien Dédouanée</option>
+                <option value="En cours de dédouanement">En cours de dédouanement</option>
+                <option value="VISITE">VISITE</option>
+                <option value="SCANNER">SCANNER</option>
+                <option value="TAXATION OK">TAXATION OK</option>
+                <option value="MANQUE TAXATION">MANQUE TAXATION</option>
+                <option value="TAXATION REJETÉ">TAXATION REJETÉ</option>
+                <option value="PESAGE">PESAGE</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">Chauffeur / Traction</label>
+              <input type="text" id="inputChauffeur" placeholder="Nom chauffeur ou BESOIN TRACTEUR" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">Date de Sortie Port</label>
+              <input type="date" id="inputDateSortie" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">Scellées (Plombs)</label>
+              <input type="text" id="inputScellees" placeholder="ex: 1390543 - 1390544" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 bg-slate-900/60 p-3 rounded-lg border border-slate-700/60">
+            <div>
+              <label class="block text-[10px] font-semibold text-slate-400 mb-1 uppercase">BAD</label>
+              <select id="inputBAD" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-slate-200">
+                <option value="OK">BAD OK</option>
+                <option value="NON">En attente</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-semibold text-slate-400 mb-1 uppercase">Pli</label>
+              <select id="inputPli" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-slate-200">
+                <option value="OK">OK</option>
+                <option value="BOITE">BOÎTE</option>
+                <option value="SANS">SANS</option>
+                <option value="A_CONFIRMER">À confirmer</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-semibold text-slate-400 mb-1 uppercase">EUR 1</label>
+              <select id="inputEUR1" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-slate-200">
+                <option value="OK">EUR1 OK</option>
+                <option value="SANS">SANS</option>
+                <option value="FACTURE_OK">FACTURE OK</option>
+                <option value="A_CONFIRMER">À confirmer</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-semibold text-slate-400 mb-1 uppercase">Carte Grise</label>
+              <select id="inputCarteGrise" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-slate-200">
+                <option value="OK">OK</option>
+                <option value="SANS">SANS</option>
+                <option value="A_CONFIRMER">À confirmer</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-semibold text-slate-400 mb-1 uppercase">Assurance</label>
+              <select id="inputAssur" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-slate-200">
+                <option value="OK">OK</option>
+                <option value="SANS">SANS</option>
+                <option value="A_CONFIRMER">À confirmer</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-semibold text-slate-400 mb-1 uppercase">Visite Tech (VT)</label>
+              <select id="inputVT" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-slate-200">
+                <option value="OK">OK</option>
+                <option value="SANS">SANS</option>
+                <option value="A_CONFIRMER">À confirmer</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="flex justify-end">
+            <button type="submit" id="submitBtn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-6 py-2.5 rounded-lg text-sm transition shadow flex items-center gap-2">
+              <i class="fa-solid fa-plus"></i>
+              <span>Ajouter cette remorque au suivi Port</span>
             </button>
           </div>
+        </form>
+      </div>
+
+      <div class="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow">
+        <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-900/60">
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-table-list text-blue-400"></i>
+            <h3 class="text-sm font-bold text-white uppercase tracking-wider">Situation Journalière Port Tanger Med (Import)</h3>
+          </div>
+          <span id="portTableCount" class="text-xs text-slate-400 font-semibold">0 remorques</span>
         </div>
-      </form>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-[11px] text-slate-300">
+            <thead class="bg-slate-900/90 text-slate-400 uppercase font-semibold border-b border-slate-700">
+              <tr>
+                <th class="py-2.5 px-3">Matricule</th>
+                <th class="py-2.5 px-3">Client</th>
+                <th class="py-2.5 px-3">Transitaire</th>
+                <th class="py-2.5 px-3">Arrivée Port</th>
+                <th class="py-2.5 px-3">État Dédouanement</th>
+                <th class="py-2.5 px-3">Chauffeur</th>
+                <th class="py-2.5 px-3">Sortie Port</th>
+                <th class="py-2.5 px-2 text-center">BAD</th>
+                <th class="py-2.5 px-2 text-center">Pli</th>
+                <th class="py-2.5 px-2 text-center">EUR1</th>
+                <th class="py-2.5 px-2 text-center">CG</th>
+                <th class="py-2.5 px-2 text-center">Assur</th>
+                <th class="py-2.5 px-2 text-center">VT</th>
+                <th class="py-2.5 px-3 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody id="portTableBody" class="divide-y divide-slate-700/60 font-medium">
+              </tbody>
+          </table>
+        </div>
+      </div>
+
     </div>
 
-    <!-- Live KPIs -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-      <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl flex items-center justify-between">
-        <div>
-          <p class="text-xs uppercase font-semibold text-slate-400">Total Suivi Actif</p>
-          <h2 id="kpiTotal" class="text-2xl font-bold text-white mt-1">0</h2>
+
+    <div id="viewTriptyque" class="hidden space-y-6">
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl flex items-center justify-between">
+          <div>
+            <p class="text-xs uppercase font-semibold text-slate-400">Total En Circulation</p>
+            <h2 id="kpiTotal" class="text-2xl font-bold text-white mt-1">0</h2>
+          </div>
+          <i class="fa-solid fa-truck text-slate-500 text-2xl"></i>
         </div>
-        <i class="fa-solid fa-truck text-slate-500 text-2xl"></i>
-      </div>
 
-      <div class="bg-rose-950/40 border border-rose-800/50 p-4 rounded-xl flex items-center justify-between">
-        <div>
-          <p class="text-xs uppercase font-semibold text-rose-400">Critique (&le; 3 Jours / Expiré)</p>
-          <h2 id="kpiCritical" class="text-2xl font-bold text-rose-400 mt-1">0</h2>
+        <div class="bg-rose-950/40 border border-rose-800/50 p-4 rounded-xl flex items-center justify-between">
+          <div>
+            <p class="text-xs uppercase font-semibold text-rose-400">Critique (&le; 3 Jours / Expiré)</p>
+            <h2 id="kpiCritical" class="text-2xl font-bold text-rose-400 mt-1">0</h2>
+          </div>
+          <i class="fa-solid fa-triangle-exclamation text-rose-500 text-2xl"></i>
         </div>
-        <i class="fa-solid fa-triangle-exclamation text-rose-500 text-2xl"></i>
-      </div>
 
-      <div class="bg-amber-950/40 border border-amber-800/50 p-4 rounded-xl flex items-center justify-between">
-        <div>
-          <p class="text-xs uppercase font-semibold text-amber-400">À Planifier (4 - 10 Jours)</p>
-          <h2 id="kpiWarning" class="text-2xl font-bold text-amber-400 mt-1">0</h2>
+        <div class="bg-amber-950/40 border border-amber-800/50 p-4 rounded-xl flex items-center justify-between">
+          <div>
+            <p class="text-xs uppercase font-semibold text-amber-400">À Planifier (4 - 10 Jours)</p>
+            <h2 id="kpiWarning" class="text-2xl font-bold text-amber-400 mt-1">0</h2>
+          </div>
+          <i class="fa-solid fa-clock-rotate-left text-amber-500 text-2xl"></i>
         </div>
-        <i class="fa-solid fa-clock-rotate-left text-amber-500 text-2xl"></i>
-      </div>
 
-      <div class="bg-purple-950/40 border border-purple-800/50 p-4 rounded-xl flex items-center justify-between">
-        <div>
-          <p class="text-xs uppercase font-semibold text-purple-400">Remorques Prises</p>
-          <h2 id="kpiBooked" class="text-2xl font-bold text-purple-400 mt-1">0</h2>
+        <div class="bg-purple-950/40 border border-purple-800/50 p-4 rounded-xl flex items-center justify-between">
+          <div>
+            <p class="text-xs uppercase font-semibold text-purple-400">Remorques Réservées</p>
+            <h2 id="kpiBooked" class="text-2xl font-bold text-purple-400 mt-1">0</h2>
+          </div>
+          <i class="fa-solid fa-lock text-purple-500 text-2xl"></i>
         </div>
-        <i class="fa-solid fa-lock text-purple-500 text-2xl"></i>
-      </div>
-    </div>
-
-    <!-- Filters -->
-    <div class="flex flex-wrap gap-3 items-center justify-between">
-      <div class="relative flex-1 min-w-[240px]">
-        <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-xs"></i>
-        <input type="text" id="searchInput" oninput="render()" placeholder="Recherche par matricule, client, chauffeur, ou chargé clientèle..." class="w-full bg-slate-800 border border-slate-700 rounded-lg pl-9 pr-4 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
       </div>
 
-      <select id="filterStatus" onchange="render()" class="bg-slate-800 border border-slate-700 text-slate-300 text-xs rounded-lg px-3 py-2.5 focus:outline-none focus:border-blue-500">
-        <option value="ALL">Tous les Statuts</option>
-        <option value="CRITICAL">🔴 Critique (&le; 3 Jours)</option>
-        <option value="WARNING">🟡 Warning (4-10 Jours)</option>
-        <option value="SAFE">🟢 Sécurisé (&gt; 10 Jours)</option>
-        <option value="AVAILABLE">⚡ Disponibles (Non prises)</option>
-        <option value="BOOKED">🔒 Planifiées / Prises</option>
-      </select>
-    </div>
+      <div class="flex flex-wrap gap-3 items-center justify-between">
+        <div class="relative flex-1 min-w-[240px]">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-xs"></i>
+          <input type="text" id="searchInput" oninput="render()" placeholder="Rechercher par matricule, client, chauffeur..." class="w-full bg-slate-800 border border-slate-700 rounded-lg pl-9 pr-4 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+        </div>
 
-    <!-- Fleet Table -->
-    <div class="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow">
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-xs text-slate-300">
-          <thead class="bg-slate-900/90 text-slate-400 uppercase font-semibold border-b border-slate-700">
-            <tr>
-              <th class="py-3 px-4">Matricule</th>
-              <th class="py-3 px-4">Client / Destination</th>
-              <th class="py-3 px-4">Sortie Port</th>
-              <th class="py-3 px-4">Séjour Maroc</th>
-              <th class="py-3 px-4">Triptyque Restant</th>
-              <th class="py-3 px-4">Statut</th>
-              <th class="py-3 px-4 text-center">Attribution Planning Export</th>
-              <th class="py-3 px-4 text-right">Action</th>
-            </tr>
-          </thead>
-          <tbody id="tableBody" class="divide-y divide-slate-700/60 font-medium">
-            <tr>
-              <td colspan="8" class="text-center py-10 text-slate-500">
-                <i class="fa-solid fa-spinner fa-spin text-xl mb-2 block text-blue-400"></i> Connexion à la base de données...
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <select id="filterStatus" onchange="render()" class="bg-slate-800 border border-slate-700 text-slate-300 text-xs rounded-lg px-3 py-2.5 focus:outline-none focus:border-blue-500">
+          <option value="ALL">Tous les Statuts</option>
+          <option value="CRITICAL">🔴 Critique (&le; 3 Jours)</option>
+          <option value="WARNING">🟡 Warning (4-10 Jours)</option>
+          <option value="SAFE">🟢 Sécurisé (&gt; 10 Jours)</option>
+          <option value="AVAILABLE">⚡ Disponibles uniquement</option>
+          <option value="BOOKED">🔒 Réservées / Bloquées</option>
+        </select>
       </div>
+
+      <div class="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-slate-900/90 text-slate-400 uppercase font-semibold border-b border-slate-700">
+              <tr>
+                <th class="py-3 px-4">Matricule</th>
+                <th class="py-3 px-4">Client</th>
+                <th class="py-3 px-4">Sortie Port</th>
+                <th class="py-3 px-4">Séjour Maroc</th>
+                <th class="py-3 px-4">Triptyque Restant</th>
+                <th class="py-3 px-4 text-center">Conformité Pli (CG / Assur / VT)</th>
+                <th class="py-3 px-4 text-center">Attribution Planning Export</th>
+                <th class="py-3 px-4 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody id="triptyqueTableBody" class="divide-y divide-slate-700/60 font-medium">
+              </tbody>
+          </table>
+        </div>
+      </div>
+
     </div>
 
   </main>
@@ -274,8 +402,11 @@
     let currentUser = JSON.parse(localStorage.getItem('sjl_user') || 'null');
     let rawList = [];
     let usersList = {};
+    let activeTab = 'PORT';
 
-    document.getElementById('inputDate').value = new Date().toISOString().split('T')[0];
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    document.getElementById('inputDateArrivee').value = now.toISOString().slice(0, 16);
 
     function toggleAuthMode(isSignup) {
       document.getElementById('loginForm').classList.toggle('hidden', isSignup);
@@ -291,8 +422,26 @@
       'OPERATOR': 'Opérateur (Lecture Seule)'
     };
 
-    function isSupervisorRole(role) {
+    function isSupervisor(role) {
       return role === 'SUPERVISOR' || role === 'ADMIN';
+    }
+
+    function switchTab(tab) {
+      activeTab = tab;
+      const isPort = tab === 'PORT';
+      
+      document.getElementById('viewPort').classList.toggle('hidden', !isPort);
+      document.getElementById('viewTriptyque').classList.toggle('hidden', isPort);
+
+      document.getElementById('tabPortBtn').className = isPort ? 
+        'text-sm font-bold text-blue-400 border-b-2 border-blue-500 pb-2 px-2 flex items-center gap-2 transition' :
+        'text-sm font-semibold text-slate-400 hover:text-slate-200 pb-2 px-2 flex items-center gap-2 transition';
+
+      document.getElementById('tabTriptyqueBtn').className = !isPort ? 
+        'text-sm font-bold text-blue-400 border-b-2 border-blue-500 pb-2 px-2 flex items-center gap-2 transition' :
+        'text-sm font-semibold text-slate-400 hover:text-slate-200 pb-2 px-2 flex items-center gap-2 transition';
+
+      render();
     }
 
     function checkAuth() {
@@ -300,19 +449,19 @@
         document.getElementById('authScreen').classList.remove('hidden');
       } else {
         document.getElementById('authScreen').classList.add('hidden');
-        const username = currentUser.username || currentUser.name || "Zouhair";
+        const username = currentUser.username || currentUser.name || "Utilisateur";
         document.getElementById('userBadgeName').innerText = username;
         document.getElementById('userBadgeRole').innerText = ROLE_TITLES[currentUser.role] || currentUser.role;
 
-        // Show Supervisor Button
-        if (isSupervisorRole(currentUser.role)) {
+        // Show Admin button if supervisor
+        if (isSupervisor(currentUser.role)) {
           document.getElementById('adminBtn').classList.remove('hidden');
         } else {
           document.getElementById('adminBtn').classList.add('hidden');
         }
 
-        // Show/Hide Port Entry input
-        if (currentUser.role === 'PORT_OPS' || isSupervisorRole(currentUser.role)) {
+        // Show Port Entry form if Port Ops or Supervisor
+        if (currentUser.role === 'PORT_OPS' || isSupervisor(currentUser.role)) {
           document.getElementById('portOpsSection').classList.remove('hidden');
         } else {
           document.getElementById('portOpsSection').classList.add('hidden');
@@ -329,14 +478,13 @@
       const existing = await res.json();
 
       if (existing) {
-        alert("Cet identifiant existe déjà. Veuillez vous connecter.");
+        alert("Cet identifiant existe déjà.");
         return;
       }
 
-      // Zouhair gets SUPERVISOR, everyone else gets OPERATOR
       const initialRole = (username === 'zouhair') ? 'SUPERVISOR' : 'OPERATOR';
-
       const userData = { username, password, role: initialRole, createdAt: new Date().toISOString() };
+      
       await fetch(`${DB_URL}/users/${username}.json`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -380,46 +528,63 @@
       if (!DB_URL || DB_URL.includes("YOUR-PROJECT-NAME")) return;
 
       try {
-        const username = currentUser ? (currentUser.username || currentUser.name) : null;
-        if (username) {
-          const userRes = await fetch(`${DB_URL}/users/${username.toLowerCase()}.json`);
-          const freshUserData = await userRes.json();
-          if (freshUserData) {
-            currentUser = freshUserData;
+        if (currentUser) {
+          const u = (currentUser.username || currentUser.name || "").toLowerCase();
+          const userRes = await fetch(`${DB_URL}/users/${u}.json`);
+          const fresh = await userRes.json();
+          if (fresh) {
+            currentUser = fresh;
             localStorage.setItem('sjl_user', JSON.stringify(currentUser));
             checkAuth();
           }
         }
 
-        // Fetch Fleet
         const res = await fetch(`${DB_URL}/trailers.json`);
         const data = await res.json();
-        
+
         rawList = [];
         if (data) {
           Object.keys(data).forEach(key => {
             const item = data[key];
-            const exitDate = new Date(item.dateSortie);
-            const today = new Date();
-            const diffDays = Math.floor((today - exitDate) / (1000 * 60 * 60 * 24));
-            const left = 30 - diffDays;
+            let daysPassed = 0;
+            let left = 30;
+            let hasExited = false;
+
+            if (item.dateSortie) {
+              hasExited = true;
+              const exitDate = new Date(item.dateSortie);
+              const today = new Date();
+              daysPassed = Math.floor((today - exitDate) / (1000 * 60 * 60 * 24));
+              left = 30 - daysPassed;
+            }
 
             rawList.push({
               id: key,
               matricule: item.matricule,
-              client: item.client || "SJL Operations",
+              client: item.client || "-",
+              transitaire: item.transitaire || "-",
+              dateArrivee: item.dateArrivee || "-",
+              etatDedouanement: item.etatDedouanement || "En cours",
               chauffeur: item.chauffeur || "-",
-              dateSortie: item.dateSortie,
-              daysPassed: Math.max(0, diffDays),
+              dateSortie: item.dateSortie || null,
+              scellees: item.scellees || "-",
+              bad: item.bad || "NON",
+              pli: item.pli || "A_CONFIRMER",
+              eur1: item.eur1 || "A_CONFIRMER",
+              carteGrise: item.carteGrise || "A_CONFIRMER",
+              assur: item.assur || "A_CONFIRMER",
+              vt: item.vt || "A_CONFIRMER",
+              daysPassed: Math.max(0, daysPassed),
               daysRemaining: left,
               status: left <= 3 ? "CRITICAL" : (left <= 10 ? "WARNING" : "SAFE"),
-              bookedBy: item.bookedBy || null
+              bookedBy: item.bookedBy || null,
+              hasExited: hasExited
             });
           });
         }
 
-        // Fetch Users count if supervisor
-        if (currentUser && isSupervisorRole(currentUser.role)) {
+        // Supervisor Pending Users Badge
+        if (currentUser && isSupervisor(currentUser.role)) {
           const usersRes = await fetch(`${DB_URL}/users.json`);
           usersList = await usersRes.json() || {};
           const pendingCount = Object.values(usersList).filter(u => u.role === 'OPERATOR').length;
@@ -434,27 +599,37 @@
 
         render();
       } catch (err) {
-        console.error("Database connection error:", err);
+        console.error("Data load error:", err);
       }
     }
 
-    async function addTrailer(e) {
+    async function addFullTrailer(e) {
       e.preventDefault();
-      if (currentUser.role !== 'PORT_OPS' && !isSupervisorRole(currentUser.role)) {
+      if (currentUser.role !== 'PORT_OPS' && !isSupervisor(currentUser.role)) {
         alert("Action réservée à l'équipe Port Tanger Med.");
         return;
       }
 
       const btn = document.getElementById('submitBtn');
       btn.disabled = true;
-      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Enregistrement...`;
 
       const username = currentUser.username || currentUser.name;
       const payload = {
         matricule: document.getElementById('inputMatricule').value.trim().toUpperCase(),
-        client: document.getElementById('inputClient').value.trim(),
+        client: document.getElementById('inputClient').value.trim().toUpperCase(),
+        transitaire: document.getElementById('inputTransitaire').value.trim().toUpperCase(),
+        dateArrivee: document.getElementById('inputDateArrivee').value,
+        etatDedouanement: document.getElementById('inputEtatDedouanement').value,
         chauffeur: document.getElementById('inputChauffeur').value.trim(),
-        dateSortie: document.getElementById('inputDate').value,
+        dateSortie: document.getElementById('inputDateSortie').value || null,
+        scellees: document.getElementById('inputScellees').value.trim(),
+        bad: document.getElementById('inputBAD').value,
+        pli: document.getElementById('inputPli').value,
+        eur1: document.getElementById('inputEUR1').value,
+        carteGrise: document.getElementById('inputCarteGrise').value,
+        assur: document.getElementById('inputAssur').value,
+        vt: document.getElementById('inputVT').value,
         timestamp: new Date().toISOString(),
         addedBy: username,
         bookedBy: null
@@ -470,22 +645,24 @@
         document.getElementById('inputMatricule').value = '';
         document.getElementById('inputClient').value = '';
         document.getElementById('inputChauffeur').value = '';
+        document.getElementById('inputScellees').value = '';
+        document.getElementById('inputDateSortie').value = '';
         await loadData();
       } catch (err) {
-        alert("Erreur lors de l'enregistrement: " + err.message);
+        alert("Erreur: " + err.message);
       } finally {
         btn.disabled = false;
-        btn.innerText = "Ajouter";
+        btn.innerHTML = `<i class="fa-solid fa-plus"></i> Ajouter cette remorque au suivi Port`;
       }
     }
 
     async function bookTrailer(id, matricule) {
-      if (currentUser.role !== 'CHARGE_CLIENT' && !isSupervisorRole(currentUser.role)) {
+      if (currentUser.role !== 'CHARGE_CLIENT' && !isSupervisor(currentUser.role)) {
         alert("Action réservée aux Chargés de Clientèle.");
         return;
       }
 
-      if (!confirm(`Confirmez-vous la réservation de la remorque ${matricule} pour votre client ?`)) return;
+      if (!confirm(`Confirmez-vous la réservation de la remorque ${matricule} pour votre client export ?`)) return;
 
       const username = currentUser.username || currentUser.name;
       try {
@@ -511,12 +688,12 @@
     }
 
     async function deleteTrailer(id) {
-      if (currentUser.role !== 'PORT_OPS' && !isSupervisorRole(currentUser.role)) {
+      if (currentUser.role !== 'PORT_OPS' && !isSupervisor(currentUser.role)) {
         alert("Action réservée à l'équipe Port.");
         return;
       }
 
-      if (!confirm("Sortie définitive (Embarquée / Exportée vers Espagne) ?")) return;
+      if (!confirm("Clôturer le triptyque (Remorque embarquée / sortie définitive du Maroc) ?")) return;
       try {
         await fetch(`${DB_URL}/trailers/${id}.json`, { method: "DELETE" });
         await loadData();
@@ -525,7 +702,151 @@
       }
     }
 
-    // Supervisor User Management Modal
+    function badgeDoc(status) {
+      if (status === "OK") return `<span class="badge-ok text-[10px] px-1.5 py-0.5 rounded font-bold">OK</span>`;
+      if (status === "SANS") return `<span class="badge-sans text-[10px] px-1.5 py-0.5 rounded font-bold">SANS</span>`;
+      if (status === "BOITE") return `<span class="badge-blue text-[10px] px-1.5 py-0.5 rounded font-bold">BOÎTE</span>`;
+      return `<span class="badge-warn text-[10px] px-1.5 py-0.5 rounded font-bold">À CONF</span>`;
+    }
+
+    function render() {
+      const search = document.getElementById('searchInput').value.toLowerCase();
+      const filter = document.getElementById('filterStatus').value;
+      const activeUser = currentUser ? (currentUser.username || currentUser.name) : '';
+
+      // 1. RENDER PORT VIEW
+      document.getElementById('portTableCount').innerText = `${rawList.length} remorques`;
+      const portBody = document.getElementById('portTableBody');
+      portBody.innerHTML = '';
+
+      if (rawList.length === 0) {
+        portBody.innerHTML = `<tr><td colspan="14" class="text-center py-8 text-slate-500">Aucune donnée au port.</td></tr>`;
+      } else {
+        rawList.forEach(row => {
+          let chStyle = row.chauffeur.toUpperCase().includes("BESOIN") ? "text-rose-400 font-bold" : "text-slate-300";
+          let etatStyle = row.etatDedouanement.toUpperCase().includes("BIEN") ? "text-emerald-400 font-bold" : "text-amber-400";
+
+          const canDelete = currentUser && (currentUser.role === 'PORT_OPS' || isSupervisor(currentUser.role));
+          const delBtn = canDelete ? `
+            <button onclick="deleteTrailer('${row.id}')" title="Supprimer / Clôturer" class="text-slate-500 hover:text-rose-400 p-1">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          ` : '-';
+
+          portBody.innerHTML += `
+            <tr class="hover:bg-slate-700/40">
+              <td class="py-2 px-3 font-bold text-yellow-300">${row.matricule}</td>
+              <td class="py-2 px-3">${row.client}</td>
+              <td class="py-2 px-3 text-slate-400">${row.transitaire}</td>
+              <td class="py-2 px-3">${row.dateArrivee.replace('T', ' ')}</td>
+              <td class="py-2 px-3 ${etatStyle}">${row.etatDedouanement}</td>
+              <td class="py-2 px-3 ${chStyle}">${row.chauffeur}</td>
+              <td class="py-2 px-3 font-bold ${row.dateSortie ? 'text-emerald-400' : 'text-slate-500'}">${row.dateSortie || 'Au Port'}</td>
+              <td class="py-2 px-2 text-center">${row.bad === 'OK' ? '<span class="text-emerald-400 font-bold">OK</span>' : '<span class="text-slate-500">-</span>'}</td>
+              <td class="py-2 px-2 text-center">${badgeDoc(row.pli)}</td>
+              <td class="py-2 px-2 text-center">${badgeDoc(row.eur1)}</td>
+              <td class="py-2 px-2 text-center">${badgeDoc(row.carteGrise)}</td>
+              <td class="py-2 px-2 text-center">${badgeDoc(row.assur)}</td>
+              <td class="py-2 px-2 text-center">${badgeDoc(row.vt)}</td>
+              <td class="py-2 px-3 text-right">${delBtn}</td>
+            </tr>
+          `;
+        });
+      }
+
+      // 2. RENDER TRIPTYQUE & PLANNING VIEW (Only units that exited port or have dateSortie)
+      const triptyqueList = rawList.filter(item => {
+        const matchesSearch = item.matricule.toLowerCase().includes(search) ||
+                              item.client.toLowerCase().includes(search) ||
+                              (item.bookedBy && item.bookedBy.toLowerCase().includes(search));
+
+        let matchesStatus = true;
+        if (filter === "CRITICAL") matchesStatus = item.status === "CRITICAL";
+        else if (filter === "WARNING") matchesStatus = item.status === "WARNING";
+        else if (filter === "SAFE") matchesStatus = item.status === "SAFE";
+        else if (filter === "AVAILABLE") matchesStatus = !item.bookedBy;
+        else if (filter === "BOOKED") matchesStatus = !!item.bookedBy;
+
+        return matchesSearch && matchesStatus && item.hasExited;
+      });
+
+      triptyqueList.sort((a, b) => a.daysRemaining - b.daysRemaining);
+
+      document.getElementById('kpiTotal').innerText = triptyqueList.length;
+      document.getElementById('kpiCritical').innerText = triptyqueList.filter(i => i.status === "CRITICAL").length;
+      document.getElementById('kpiWarning').innerText = triptyqueList.filter(i => i.status === "WARNING").length;
+      document.getElementById('kpiBooked').innerText = triptyqueList.filter(i => !!i.bookedBy).length;
+
+      const tripBody = document.getElementById('triptyqueTableBody');
+      tripBody.innerHTML = '';
+
+      if (triptyqueList.length === 0) {
+        tripBody.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-slate-500">Aucune remorque en circulation avec sortie port enregistrée.</td></tr>`;
+      } else {
+        triptyqueList.forEach(row => {
+          let badgeClass = "bg-emerald-900/60 text-emerald-300 border-emerald-700";
+          let statusText = `${row.daysRemaining}j restants`;
+
+          if (row.status === "CRITICAL") {
+            badgeClass = "bg-rose-900/70 text-rose-300 border-rose-700 font-bold animate-pulse";
+            statusText = row.daysRemaining < 0 ? `EXPIRÉ (${Math.abs(row.daysRemaining)}j)` : `URGENT: ${row.daysRemaining}j restants`;
+          } else if (row.status === "WARNING") {
+            badgeClass = "bg-amber-900/60 text-amber-300 border-amber-700";
+          }
+
+          // Doc compliance summary (CG, Assur, VT)
+          const allDocsOk = row.carteGrise === "OK" && row.assur === "OK" && row.vt === "OK";
+          const docBadge = allDocsOk ? 
+            `<span class="badge-ok text-[11px] px-2 py-0.5 rounded-full font-bold">✓ Pli Conforme</span>` :
+            `<span class="badge-warn text-[11px] px-2 py-0.5 rounded-full font-bold">⚠ Docs Incomplets</span>`;
+
+          // Booking logic
+          let bookingCol = '';
+          if (row.bookedBy) {
+            const isMine = activeUser === row.bookedBy || isSupervisor(currentUser.role);
+            bookingCol = `
+              <div class="flex items-center justify-center gap-1.5">
+                <span class="inline-flex items-center gap-1 bg-purple-950/80 border border-purple-700 text-purple-300 px-2.5 py-1 rounded-lg text-[11px] font-bold">
+                  <i class="fa-solid fa-user-lock"></i> Prise par ${row.bookedBy}
+                </span>
+                ${isMine ? `<button onclick="releaseTrailer('${row.id}', '${row.matricule}')" title="Libérer la remorque" class="text-rose-400 hover:text-rose-300 text-xs px-1 font-bold">✕</button>` : ''}
+              </div>
+            `;
+          } else {
+            const canBook = currentUser && (currentUser.role === 'CHARGE_CLIENT' || isSupervisor(currentUser.role));
+            bookingCol = canBook ? `
+              <div class="text-center">
+                <button onclick="bookTrailer('${row.id}', '${row.matricule}')" class="bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white border border-blue-600/50 px-2.5 py-1 rounded-md text-[11px] font-semibold transition">
+                  ⚡ Planifier cette remorque
+                </button>
+              </div>
+            ` : `<span class="text-slate-500 text-[11px] italic">Disponible</span>`;
+          }
+
+          const canDelete = currentUser && (currentUser.role === 'PORT_OPS' || isSupervisor(currentUser.role));
+          const actionCol = canDelete ? `
+            <button onclick="deleteTrailer('${row.id}')" title="Clôturer Triptyque (Embarquée / Exportée)" class="text-slate-500 hover:text-emerald-400 p-1 transition">
+              <i class="fa-solid fa-ship"></i>
+            </button>
+          ` : `<span class="text-slate-600 text-[10px]">-</span>`;
+
+          tripBody.innerHTML += `
+            <tr class="hover:bg-slate-700/40 transition">
+              <td class="py-3 px-4 font-bold text-yellow-400">${row.matricule}</td>
+              <td class="py-3 px-4">${row.client}</td>
+              <td class="py-3 px-4">${row.dateSortie}</td>
+              <td class="py-3 px-4 font-semibold text-slate-300">${row.daysPassed} jours</td>
+              <td class="py-3 px-4 font-bold ${row.daysRemaining <= 3 ? 'text-rose-400' : 'text-slate-100'}">${row.daysRemaining} j</td>
+              <td class="py-3 px-4 text-center">${docBadge}</td>
+              <td class="py-3 px-4">${bookingCol}</td>
+              <td class="py-3 px-4 text-right">${actionCol}</td>
+            </tr>
+          `;
+        });
+      }
+    }
+
+    // Supervisor User Role Manager Modal
     async function toggleAdminModal() {
       const modal = document.getElementById('adminModal');
       modal.classList.toggle('hidden');
@@ -556,7 +877,7 @@
                 <option value="OPERATOR" ${u.role === 'OPERATOR' ? 'selected' : ''}>Opérateur (Lecture)</option>
                 <option value="CHARGE_CLIENT" ${u.role === 'CHARGE_CLIENT' ? 'selected' : ''}>Chargé de Clientèle</option>
                 <option value="PORT_OPS" ${u.role === 'PORT_OPS' ? 'selected' : ''}>Port Tanger Med</option>
-                <option value="SUPERVISOR" ${isSupervisorRole(u.role) ? 'selected' : ''}>Superviseur</option>
+                <option value="SUPERVISOR" ${isSupervisor(u.role) ? 'selected' : ''}>Superviseur</option>
               </select>
             </td>
           </tr>
@@ -574,101 +895,6 @@
       loadData();
     }
 
-    function render() {
-      const search = document.getElementById('searchInput').value.toLowerCase();
-      const filter = document.getElementById('filterStatus').value;
-
-      const filtered = rawList.filter(item => {
-        const matchesSearch = item.matricule.toLowerCase().includes(search) ||
-                              item.client.toLowerCase().includes(search) ||
-                              (item.bookedBy && item.bookedBy.toLowerCase().includes(search));
-
-        let matchesStatus = true;
-        if (filter === "CRITICAL") matchesStatus = item.status === "CRITICAL";
-        else if (filter === "WARNING") matchesStatus = item.status === "WARNING";
-        else if (filter === "SAFE") matchesStatus = item.status === "SAFE";
-        else if (filter === "AVAILABLE") matchesStatus = !item.bookedBy;
-        else if (filter === "BOOKED") matchesStatus = !!item.bookedBy;
-
-        return matchesSearch && matchesStatus;
-      });
-
-      filtered.sort((a, b) => a.daysRemaining - b.daysRemaining);
-
-      document.getElementById('kpiTotal').innerText = rawList.length;
-      document.getElementById('kpiCritical').innerText = rawList.filter(i => i.status === "CRITICAL").length;
-      document.getElementById('kpiWarning').innerText = rawList.filter(i => i.status === "WARNING").length;
-      document.getElementById('kpiBooked').innerText = rawList.filter(i => !!i.bookedBy).length;
-
-      const tbody = document.getElementById('tableBody');
-      tbody.innerHTML = '';
-
-      if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-slate-500">Aucune remorque trouvée.</td></tr>`;
-        return;
-      }
-
-      const activeUser = currentUser ? (currentUser.username || currentUser.name) : '';
-
-      filtered.forEach(row => {
-        let badgeClass = "bg-emerald-900/60 text-emerald-300 border-emerald-700";
-        let statusText = `${row.daysRemaining}j restants`;
-
-        if (row.status === "CRITICAL") {
-          badgeClass = "bg-rose-900/70 text-rose-300 border-rose-700 font-bold animate-pulse";
-          statusText = row.daysRemaining < 0 ? `EXPIRÉ (${Math.abs(row.daysRemaining)}j)` : `URGENT: ${row.daysRemaining}j restants`;
-        } else if (row.status === "WARNING") {
-          badgeClass = "bg-amber-900/60 text-amber-300 border-amber-700";
-        }
-
-        let bookingCol = '';
-        if (row.bookedBy) {
-          const isMine = activeUser === row.bookedBy || isSupervisorRole(currentUser.role);
-          bookingCol = `
-            <div class="flex items-center justify-center gap-1.5">
-              <span class="inline-flex items-center gap-1 bg-purple-950/80 border border-purple-700 text-purple-300 px-2.5 py-1 rounded-lg text-[11px] font-bold">
-                <i class="fa-solid fa-user-lock"></i> Prise par ${row.bookedBy}
-              </span>
-              ${isMine ? `<button onclick="releaseTrailer('${row.id}', '${row.matricule}')" title="Annuler réservation" class="text-rose-400 hover:text-rose-300 text-xs px-1">✕</button>` : ''}
-            </div>
-          `;
-        } else {
-          const canBook = currentUser && (currentUser.role === 'CHARGE_CLIENT' || isSupervisorRole(currentUser.role));
-          bookingCol = canBook ? `
-            <div class="text-center">
-              <button onclick="bookTrailer('${row.id}', '${row.matricule}')" class="bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white border border-blue-600/50 px-2.5 py-1 rounded-md text-[11px] font-semibold transition">
-                ⚡ Planifier cette remorque
-              </button>
-            </div>
-          ` : `<span class="text-slate-500 text-[11px] italic">Disponible</span>`;
-        }
-
-        const canDelete = currentUser && (currentUser.role === 'PORT_OPS' || isSupervisorRole(currentUser.role));
-        const actionCol = canDelete ? `
-          <button onclick="deleteTrailer('${row.id}')" title="Clôturer Triptyque (Embarquée / Exportée)" class="text-slate-500 hover:text-emerald-400 p-1 transition">
-            <i class="fa-solid fa-ship"></i>
-          </button>
-        ` : `<span class="text-slate-600 text-[10px]">-</span>`;
-
-        tbody.innerHTML += `
-          <tr class="hover:bg-slate-700/40 transition">
-            <td class="py-3 px-4 font-bold text-yellow-400">${row.matricule}</td>
-            <td class="py-3 px-4">${row.client}</td>
-            <td class="py-3 px-4">${row.dateSortie}</td>
-            <td class="py-3 px-4 font-semibold text-slate-300">${row.daysPassed} jours</td>
-            <td class="py-3 px-4 font-bold ${row.daysRemaining <= 3 ? 'text-rose-400' : 'text-slate-100'}">${row.daysRemaining} j</td>
-            <td class="py-3 px-4">
-              <span class="inline-block px-2.5 py-1 rounded-full text-[10px] border ${badgeClass}">
-                ${statusText}
-              </span>
-            </td>
-            <td class="py-3 px-4">${bookingCol}</td>
-            <td class="py-3 px-4 text-right">${actionCol}</td>
-          </tr>
-        `;
-      });
-    }
-
     function exportToExcel() {
       if (rawList.length === 0) {
         alert("Aucune donnée à exporter !");
@@ -676,18 +902,26 @@
       }
       const exportData = rawList.map(item => ({
         "MATRICULE": item.matricule,
-        "CLIENT / DESTINATION": item.client,
-        "DATE SORTIE PORT": item.dateSortie,
-        "JOURS AU MAROC": item.daysPassed,
-        "JOURS RESTANTS TRIPTYQUE": item.daysRemaining,
-        "STATUT TRIPTYQUE": item.status,
+        "CLIENT": item.client,
+        "TRANSITAIRE": item.transitaire,
+        "DATE ARRIVEE PORT": item.dateArrivee,
+        "ETAT DEDOUANEMENT": item.etatDedouanement,
+        "CHAUFFEUR / TRACTION": item.chauffeur,
+        "DATE SORTIE PORT": item.dateSortie || "AU PORT",
+        "BAD": item.bad,
+        "PLI": item.pli,
+        "EUR1": item.eur1,
+        "CARTE GRISE": item.carteGrise,
+        "ASSURANCE": item.assur,
+        "VISITE TECHNIQUE": item.vt,
+        "JOURS RESTANTS TRIPTYQUE": item.hasExited ? item.daysRemaining : "N/A",
         "PLANIFIE PAR": item.bookedBy || "DISPONIBLE"
       }));
 
       const ws = XLSX.utils.json_to_sheet(exportData);
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Planning_Triptyque");
-      XLSX.writeFile(wb, `SJL_Triptyque_Export_${new Date().toISOString().split('T')[0]}.xlsx`);
+      XLSX.utils.book_append_sheet(wb, ws, "SJL_Situation_Port");
+      XLSX.writeFile(wb, `SJL_Port_Export_${new Date().toISOString().split('T')[0]}.xlsx`);
     }
 
     // Startup
