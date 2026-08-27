@@ -1,0 +1,23 @@
+.badge-ok {
+  background-color: #065f46;
+  color: #6ee7b7;
+  border: 1px solid #059669;
+}
+
+.badge-sans {
+  background-color: #881337;
+  color: #fda4af;
+  border: 1px solid #e11d48;
+}
+
+.badge-warn {
+  background-color: #78350f;
+  color: #fde68a;
+  border: 1px solid #d97706;
+}
+
+.badge-blue {
+  background-color: #1e3a8a;
+  color: #93c5fd;
+  border: 1px solid #2563eb;
+}
