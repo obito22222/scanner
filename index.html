@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SJL Triptyque 360° | Multi-User Fleet Portal</title>
+  <title>SJL Triptyque 360° | Plateforme Collaborative</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -11,11 +11,45 @@
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans">
 
   <script>
-    // ⚠️ PASTE YOUR FIREBASE REALTIME DATABASE URL HERE:
+    // ⚠️ METTEZ VOTRE URL FIREBASE ICI (SANS LE '/' FINAL) :
     const DB_URL = "https://sjl-fleet-triptyque-default-rtdb.firebaseio.com";
   </script>
 
-  <!-- Top Navbar -->
+  <!-- ==================== 1. LOGIN / ROLE SELECTION MODAL ==================== -->
+  <div id="loginScreen" class="fixed inset-0 bg-slate-950/90 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-6">
+      <div class="text-center space-y-2">
+        <div class="inline-flex bg-blue-600 p-3 rounded-xl shadow-lg">
+          <i class="fa-solid fa-truck-ramp-box text-2xl text-white"></i>
+        </div>
+        <h2 class="text-xl font-bold text-white tracking-wide">SJL Triptyque Hub</h2>
+        <p class="text-xs text-slate-400">Sélectionnez votre profil pour accéder à la flotte</p>
+      </div>
+
+      <form onsubmit="handleLogin(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Votre Nom & Prénom *</label>
+          <input type="text" id="loginName" required placeholder="ex: Khalid / Yassine / Sarah" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Votre Rôle Opérationnel *</label>
+          <select id="loginRole" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-yellow-300 font-semibold focus:outline-none focus:border-blue-500">
+            <option value="CHARGE_CLIENT">Chargé Clientèle / Planning Export</option>
+            <option value="PORT_OPS">Exploitation Port / Saisie (Khalid & Équipe)</option>
+            <option value="ADMIN">Superviseur / Direction Logistique</option>
+          </select>
+        </div>
+
+        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 rounded-lg shadow-lg text-sm transition flex items-center justify-center gap-2">
+          <span>Accéder à la plateforme</span>
+          <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== 2. MAIN APPLICATION NAVBAR ==================== -->
   <header class="bg-slate-800 border-b border-slate-700 px-6 py-4 flex flex-wrap justify-between items-center gap-4">
     <div class="flex items-center space-x-3">
       <div class="bg-blue-600 text-white p-2.5 rounded-lg shadow-md">
@@ -25,38 +59,51 @@
         <div class="flex items-center gap-2">
           <h1 class="text-lg font-bold text-white tracking-wide">SJL Live Fleet Portal</h1>
           <span class="inline-flex items-center gap-1 bg-emerald-950 text-emerald-400 border border-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> LIVE SYNC
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> SYNC LIVE
           </span>
         </div>
-        <p class="text-xs text-slate-400">Collaborative Port Exits & Triptyque Countdown</p>
+        <p class="text-xs text-slate-400">Gestion Triptyque 30J & Attribution Planning Export</p>
       </div>
     </div>
     
     <div class="flex items-center space-x-3">
+      <!-- User Profile Badge -->
+      <div class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs flex items-center gap-2">
+        <i class="fa-solid fa-user-check text-blue-400"></i>
+        <div>
+          <span id="userBadgeName" class="font-bold text-white">Utilisateur</span>
+          <span id="userBadgeRole" class="text-[10px] text-slate-400 block">-</span>
+        </div>
+        <button onclick="logout()" title="Changer d'utilisateur" class="text-slate-500 hover:text-rose-400 ml-2">
+          <i class="fa-solid fa-right-from-bracket"></i>
+        </button>
+      </div>
+
       <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-4 py-2.5 rounded-lg shadow transition flex items-center gap-2">
         <i class="fa-solid fa-file-excel"></i> Export Excel (.xlsx)
       </button>
     </div>
   </header>
 
+  <!-- ==================== 3. MAIN DASHBOARD CONTENT ==================== -->
   <main class="flex-1 p-4 sm:p-6 max-w-7xl w-full mx-auto space-y-6">
 
-    <!-- Add Trailer Form -->
-    <div class="bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-lg">
+    <!-- Saisie Section (Restricted to PORT_OPS & ADMIN only) -->
+    <div id="portOpsSection" class="hidden bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-lg">
       <div class="flex items-center gap-2 mb-3">
         <i class="fa-solid fa-circle-plus text-blue-400"></i>
-        <h2 class="text-sm font-bold text-white uppercase tracking-wider">Log Port Exit (Sortie Port)</h2>
+        <h2 class="text-sm font-bold text-white uppercase tracking-wider">Saisie Sortie Port (Réservé Exploitation Port)</h2>
       </div>
 
       <form id="entryForm" onsubmit="addTrailer(event)" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
         <div>
           <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">Matricule Remorque *</label>
-          <input type="text" id="inputMatricule" required placeholder="e.g. R 1234 BCD or 7424-011" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-yellow-300 font-bold uppercase focus:outline-none focus:border-blue-500">
+          <input type="text" id="inputMatricule" required placeholder="ex: R 1234 BCD ou 7424-011" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-yellow-300 font-bold uppercase focus:outline-none focus:border-blue-500">
         </div>
 
         <div>
           <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">Client / Destination</label>
-          <input type="text" id="inputClient" placeholder="e.g. TFZ / Renault / Lear" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+          <input type="text" id="inputClient" placeholder="ex: TFZ / Renault / Lear" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
         </div>
 
         <div>
@@ -69,18 +116,18 @@
           <div class="flex gap-2">
             <input type="date" id="inputDate" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
             <button type="submit" id="submitBtn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-5 py-2 rounded-lg text-sm transition shadow flex items-center justify-center">
-              <span>Add</span>
+              <span>Ajouter</span>
             </button>
           </div>
         </div>
       </form>
     </div>
 
-    <!-- Live KPIs -->
+    <!-- Live Fleet KPIs -->
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
       <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl flex items-center justify-between">
         <div>
-          <p class="text-xs uppercase font-semibold text-slate-400">Total Tracked</p>
+          <p class="text-xs uppercase font-semibold text-slate-400">Total En Circulation</p>
           <h2 id="kpiTotal" class="text-2xl font-bold text-white mt-1">0</h2>
         </div>
         <i class="fa-solid fa-truck text-slate-500 text-2xl"></i>
@@ -88,7 +135,7 @@
 
       <div class="bg-rose-950/40 border border-rose-800/50 p-4 rounded-xl flex items-center justify-between">
         <div>
-          <p class="text-xs uppercase font-semibold text-rose-400">Critical (&le; 3 Days / Over)</p>
+          <p class="text-xs uppercase font-semibold text-rose-400">Critique (&le; 3 Jours / Expiré)</p>
           <h2 id="kpiCritical" class="text-2xl font-bold text-rose-400 mt-1">0</h2>
         </div>
         <i class="fa-solid fa-triangle-exclamation text-rose-500 text-2xl"></i>
@@ -96,18 +143,18 @@
 
       <div class="bg-amber-950/40 border border-amber-800/50 p-4 rounded-xl flex items-center justify-between">
         <div>
-          <p class="text-xs uppercase font-semibold text-amber-400">Warning (4 - 10 Days)</p>
+          <p class="text-xs uppercase font-semibold text-amber-400">À Planifier (4 - 10 Jours)</p>
           <h2 id="kpiWarning" class="text-2xl font-bold text-amber-400 mt-1">0</h2>
         </div>
         <i class="fa-solid fa-clock-rotate-left text-amber-500 text-2xl"></i>
       </div>
 
-      <div class="bg-emerald-950/40 border border-emerald-800/50 p-4 rounded-xl flex items-center justify-between">
+      <div class="bg-purple-950/40 border border-purple-800/50 p-4 rounded-xl flex items-center justify-between">
         <div>
-          <p class="text-xs uppercase font-semibold text-emerald-400">Safe Range (&gt; 10 Days)</p>
-          <h2 id="kpiSafe" class="text-2xl font-bold text-emerald-400 mt-1">0</h2>
+          <p class="text-xs uppercase font-semibold text-purple-400">Remorques Prises / Bloquées</p>
+          <h2 id="kpiBooked" class="text-2xl font-bold text-purple-400 mt-1">0</h2>
         </div>
-        <i class="fa-solid fa-shield-halved text-emerald-500 text-2xl"></i>
+        <i class="fa-solid fa-lock text-purple-500 text-2xl"></i>
       </div>
     </div>
 
@@ -115,37 +162,39 @@
     <div class="flex flex-wrap gap-3 items-center justify-between">
       <div class="relative flex-1 min-w-[240px]">
         <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-xs"></i>
-        <input type="text" id="searchInput" oninput="render()" placeholder="Filter by matricule, client, or driver..." class="w-full bg-slate-800 border border-slate-700 rounded-lg pl-9 pr-4 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+        <input type="text" id="searchInput" oninput="render()" placeholder="Recherche par matricule, client, chauffeur, ou chargé clientèle..." class="w-full bg-slate-800 border border-slate-700 rounded-lg pl-9 pr-4 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
       </div>
 
       <select id="filterStatus" onchange="render()" class="bg-slate-800 border border-slate-700 text-slate-300 text-xs rounded-lg px-3 py-2.5 focus:outline-none focus:border-blue-500">
-        <option value="ALL">All Risk Levels</option>
-        <option value="CRITICAL">🔴 Critical (&le; 3 Days)</option>
-        <option value="WARNING">🟡 Warning (4-10 Days)</option>
-        <option value="SAFE">🟢 Safe (&gt; 10 Days)</option>
+        <option value="ALL">Tous les Statuts</option>
+        <option value="CRITICAL">🔴 Critique (&le; 3 Jours)</option>
+        <option value="WARNING">🟡 Warning (4-10 Jours)</option>
+        <option value="SAFE">🟢 Sécurisé (&gt; 10 Jours)</option>
+        <option value="AVAILABLE">⚡ Disponibles uniquement (Non prises)</option>
+        <option value="BOOKED">🔒 Planifiées / Prises</option>
       </select>
     </div>
 
-    <!-- Real-Time Shared Table -->
+    <!-- Collaborative Fleet Table -->
     <div class="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow">
       <div class="overflow-x-auto">
         <table class="w-full text-left text-xs text-slate-300">
           <thead class="bg-slate-900/90 text-slate-400 uppercase font-semibold border-b border-slate-700">
             <tr>
               <th class="py-3 px-4">Matricule</th>
-              <th class="py-3 px-4">Client / Localisation</th>
-              <th class="py-3 px-4">Chauffeur</th>
+              <th class="py-3 px-4">Client / Destination</th>
               <th class="py-3 px-4">Sortie Port</th>
-              <th class="py-3 px-4">Days in Maroc</th>
-              <th class="py-3 px-4">Triptyque Remaining</th>
-              <th class="py-3 px-4 text-center">Status</th>
+              <th class="py-3 px-4">Séjour Maroc</th>
+              <th class="py-3 px-4">Triptyque Restant</th>
+              <th class="py-3 px-4">Urgence</th>
+              <th class="py-3 px-4 text-center">Attribution Planning Export</th>
               <th class="py-3 px-4 text-right">Action</th>
             </tr>
           </thead>
           <tbody id="tableBody" class="divide-y divide-slate-700/60 font-medium">
             <tr>
               <td colspan="8" class="text-center py-10 text-slate-500">
-                <i class="fa-solid fa-spinner fa-spin text-xl mb-2 block text-blue-400"></i> Connecting to multi-user database...
+                <i class="fa-solid fa-spinner fa-spin text-xl mb-2 block text-blue-400"></i> Chargement des flux en direct...
               </td>
             </tr>
           </tbody>
@@ -156,15 +205,49 @@
   </main>
 
   <script>
+    let currentUser = JSON.parse(localStorage.getItem('sjl_user') || 'null');
     let rawList = [];
+
     document.getElementById('inputDate').value = new Date().toISOString().split('T')[0];
 
-    // Read live fleet directly from database
-    async function loadData() {
-      if (!DB_URL || DB_URL.includes("YOUR-PROJECT-NAME")) {
-        document.getElementById('tableBody').innerHTML = `<tr><td colspan="8" class="text-center py-6 text-amber-400 font-semibold">⚠️ Paste your Firebase Database URL into line 14 of index.html.</td></tr>`;
-        return;
+    // Check user session
+    function checkAuth() {
+      if (!currentUser) {
+        document.getElementById('loginScreen').classList.remove('hidden');
+      } else {
+        document.getElementById('loginScreen').classList.add('hidden');
+        document.getElementById('userBadgeName').innerText = currentUser.name;
+        document.getElementById('userBadgeRole').innerText = currentUser.role === 'PORT_OPS' ? 'Exploitation Port' : (currentUser.role === 'ADMIN' ? 'Admin / Direction' : 'Chargé Clientèle');
+        
+        // Show/Hide Port Entry input
+        if (currentUser.role === 'PORT_OPS' || currentUser.role === 'ADMIN') {
+          document.getElementById('portOpsSection').classList.remove('hidden');
+        } else {
+          document.getElementById('portOpsSection').classList.add('hidden');
+        }
       }
+    }
+
+    function handleLogin(e) {
+      e.preventDefault();
+      const name = document.getElementById('loginName').value.trim();
+      const role = document.getElementById('loginRole').value;
+      if (!name) return;
+
+      currentUser = { name, role };
+      localStorage.setItem('sjl_user', JSON.stringify(currentUser));
+      checkAuth();
+      loadData();
+    }
+
+    function logout() {
+      localStorage.removeItem('sjl_user');
+      currentUser = null;
+      checkAuth();
+    }
+
+    async function loadData() {
+      if (!DB_URL || DB_URL.includes("YOUR-PROJECT-NAME")) return;
 
       try {
         const res = await fetch(`${DB_URL}/trailers.json`);
@@ -187,7 +270,9 @@
               dateSortie: item.dateSortie,
               daysPassed: Math.max(0, diffDays),
               daysRemaining: left,
-              status: left <= 3 ? "CRITICAL" : (left <= 10 ? "WARNING" : "SAFE")
+              status: left <= 3 ? "CRITICAL" : (left <= 10 ? "WARNING" : "SAFE"),
+              bookedBy: item.bookedBy || null,
+              bookedAt: item.bookedAt || null
             });
           });
         }
@@ -208,7 +293,9 @@
         client: document.getElementById('inputClient').value.trim(),
         chauffeur: document.getElementById('inputChauffeur').value.trim(),
         dateSortie: document.getElementById('inputDate').value,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        addedBy: currentUser.name,
+        bookedBy: null
       };
 
       try {
@@ -223,20 +310,52 @@
         document.getElementById('inputChauffeur').value = '';
         await loadData();
       } catch (err) {
-        alert("Failed to save: " + err.message);
+        alert("Erreur lors de l'enregistrement: " + err.message);
       } finally {
         btn.disabled = false;
-        btn.innerText = "Add";
+        btn.innerText = "Ajouter";
+      }
+    }
+
+    // Lock/Book Trailer for Planning
+    async function bookTrailer(id, matricule) {
+      if (!confirm(`Confirmez-vous la réservation de la remorque ${matricule} pour votre client ?`)) return;
+
+      try {
+        await fetch(`${DB_URL}/trailers/${id}/bookedBy.json`, {
+          method: "PUT",
+          body: JSON.stringify(currentUser.name)
+        });
+        await fetch(`${DB_URL}/trailers/${id}/bookedAt.json`, {
+          method: "PUT",
+          body: JSON.stringify(new Date().toISOString())
+        });
+        await loadData();
+      } catch (err) {
+        alert("Erreur de réservation: " + err.message);
+      }
+    }
+
+    // Release Trailer back to pool
+    async function releaseTrailer(id, matricule) {
+      if (!confirm(`Libérer la remorque ${matricule} pour les autres chargés clientèle ?`)) return;
+
+      try {
+        await fetch(`${DB_URL}/trailers/${id}/bookedBy.json`, { method: "DELETE" });
+        await fetch(`${DB_URL}/trailers/${id}/bookedAt.json`, { method: "DELETE" });
+        await loadData();
+      } catch (err) {
+        alert("Erreur de libération: " + err.message);
       }
     }
 
     async function deleteTrailer(id) {
-      if (!confirm("Remove this trailer from active monitoring?")) return;
+      if (!confirm("Sortie définitive (Embarquée / Exportée vers Espagne) ?")) return;
       try {
         await fetch(`${DB_URL}/trailers/${id}.json`, { method: "DELETE" });
         await loadData();
       } catch (err) {
-        alert("Delete failed: " + err.message);
+        alert("Suppression impossible: " + err.message);
       }
     }
 
@@ -247,57 +366,91 @@
       const filtered = rawList.filter(item => {
         const matchesSearch = item.matricule.toLowerCase().includes(search) ||
                               item.client.toLowerCase().includes(search) ||
-                              item.chauffeur.toLowerCase().includes(search);
-        const matchesStatus = filter === "ALL" || item.status === filter;
+                              (item.bookedBy && item.bookedBy.toLowerCase().includes(search));
+
+        let matchesStatus = true;
+        if (filter === "CRITICAL") matchesStatus = item.status === "CRITICAL";
+        else if (filter === "WARNING") matchesStatus = item.status === "WARNING";
+        else if (filter === "SAFE") matchesStatus = item.status === "SAFE";
+        else if (filter === "AVAILABLE") matchesStatus = !item.bookedBy;
+        else if (filter === "BOOKED") matchesStatus = !!item.bookedBy;
+
         return matchesSearch && matchesStatus;
       });
 
       // Priority sort: lowest days remaining first
       filtered.sort((a, b) => a.daysRemaining - b.daysRemaining);
 
-      // Update counters
+      // KPIs
       document.getElementById('kpiTotal').innerText = rawList.length;
       document.getElementById('kpiCritical').innerText = rawList.filter(i => i.status === "CRITICAL").length;
       document.getElementById('kpiWarning').innerText = rawList.filter(i => i.status === "WARNING").length;
-      document.getElementById('kpiSafe').innerText = rawList.filter(i => i.status === "SAFE").length;
+      document.getElementById('kpiBooked').innerText = rawList.filter(i => !!i.bookedBy).length;
 
       const tbody = document.getElementById('tableBody');
       tbody.innerHTML = '';
 
       if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-slate-500">No matching trailers active.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-slate-500">Aucune remorque trouvée.</td></tr>`;
         return;
       }
 
       filtered.forEach(row => {
         let badgeClass = "bg-emerald-900/60 text-emerald-300 border-emerald-700";
-        let statusText = `${row.daysRemaining} days left`;
+        let statusText = `${row.daysRemaining}j restants`;
 
         if (row.status === "CRITICAL") {
           badgeClass = "bg-rose-900/70 text-rose-300 border-rose-700 font-bold animate-pulse";
-          statusText = row.daysRemaining < 0 ? `EXPIRED (${Math.abs(row.daysRemaining)}d)` : `ALERT: ${row.daysRemaining}d left`;
+          statusText = row.daysRemaining < 0 ? `EXPIRÉ (${Math.abs(row.daysRemaining)}j)` : `URGENT: ${row.daysRemaining}j restants`;
         } else if (row.status === "WARNING") {
           badgeClass = "bg-amber-900/60 text-amber-300 border-amber-700";
         }
+
+        // Planning Assignment Column
+        let bookingCol = '';
+        if (row.bookedBy) {
+          const isMine = currentUser && currentUser.name === row.bookedBy;
+          bookingCol = `
+            <div class="flex items-center justify-center gap-1.5">
+              <span class="inline-flex items-center gap-1 bg-purple-950/80 border border-purple-700 text-purple-300 px-2.5 py-1 rounded-lg text-[11px] font-bold">
+                <i class="fa-solid fa-user-lock"></i> Prise par ${row.bookedBy}
+              </span>
+              ${(isMine || (currentUser && currentUser.role === 'ADMIN')) ? 
+                `<button onclick="releaseTrailer('${row.id}', '${row.matricule}')" title="Annuler réservation" class="text-rose-400 hover:text-rose-300 text-xs px-1">✕</button>` : ''}
+            </div>
+          `;
+        } else {
+          bookingCol = `
+            <div class="text-center">
+              <button onclick="bookTrailer('${row.id}', '${row.matricule}')" class="bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white border border-blue-600/50 px-2.5 py-1 rounded-md text-[11px] font-semibold transition">
+                ⚡ Planifier cette remorque
+              </button>
+            </div>
+          `;
+        }
+
+        // Action Column (Only Khalid / Port Ops / Admin can delete upon export)
+        const canDelete = currentUser && (currentUser.role === 'PORT_OPS' || currentUser.role === 'ADMIN');
+        const actionCol = canDelete ? `
+          <button onclick="deleteTrailer('${row.id}')" title="Clôturer Triptyque (Embarquée / Exportée)" class="text-slate-500 hover:text-emerald-400 p-1 transition">
+            <i class="fa-solid fa-ship"></i>
+          </button>
+        ` : `<span class="text-slate-600 text-[10px]">-</span>`;
 
         tbody.innerHTML += `
           <tr class="hover:bg-slate-700/40 transition">
             <td class="py-3 px-4 font-bold text-yellow-400">${row.matricule}</td>
             <td class="py-3 px-4">${row.client}</td>
-            <td class="py-3 px-4 text-slate-400">${row.chauffeur}</td>
             <td class="py-3 px-4">${row.dateSortie}</td>
-            <td class="py-3 px-4 font-semibold text-slate-300">${row.daysPassed} days</td>
-            <td class="py-3 px-4 font-bold ${row.daysRemaining <= 3 ? 'text-rose-400' : 'text-slate-100'}">${row.daysRemaining} days</td>
-            <td class="py-3 px-4 text-center">
-              <span class="inline-block px-2.5 py-1 rounded-full text-[11px] border ${badgeClass}">
+            <td class="py-3 px-4 font-semibold text-slate-300">${row.daysPassed} jours</td>
+            <td class="py-3 px-4 font-bold ${row.daysRemaining <= 3 ? 'text-rose-400' : 'text-slate-100'}">${row.daysRemaining} j</td>
+            <td class="py-3 px-4">
+              <span class="inline-block px-2.5 py-1 rounded-full text-[10px] border ${badgeClass}">
                 ${statusText}
               </span>
             </td>
-            <td class="py-3 px-4 text-right">
-              <button onclick="deleteTrailer('${row.id}')" title="Discharge / Exported" class="text-slate-500 hover:text-rose-400 p-1 transition">
-                <i class="fa-solid fa-trash-can"></i>
-              </button>
-            </td>
+            <td class="py-3 px-4">${bookingCol}</td>
+            <td class="py-3 px-4 text-right">${actionCol}</td>
           </tr>
         `;
       });
@@ -305,28 +458,29 @@
 
     function exportToExcel() {
       if (rawList.length === 0) {
-        alert("No fleet data to export!");
+        alert("Aucune donnée à exporter !");
         return;
       }
       const exportData = rawList.map(item => ({
         "MATRICULE": item.matricule,
         "CLIENT / DESTINATION": item.client,
-        "CHAUFFEUR": item.chauffeur,
         "DATE SORTIE PORT": item.dateSortie,
-        "JOURS PASSES": item.daysPassed,
+        "JOURS AU MAROC": item.daysPassed,
         "JOURS RESTANTS TRIPTYQUE": item.daysRemaining,
-        "STATUT": item.status
+        "STATUT TRIPTYQUE": item.status,
+        "PLANIFIE PAR (CHARGE CLIENTELE)": item.bookedBy || "DISPONIBLE"
       }));
 
       const ws = XLSX.utils.json_to_sheet(exportData);
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Triptyque_Situation");
-      XLSX.writeFile(wb, `SJL_Triptyque_Master_${new Date().toISOString().split('T')[0]}.xlsx`);
+      XLSX.utils.book_append_sheet(wb, ws, "Planning_Triptyque");
+      XLSX.writeFile(wb, `SJL_Triptyque_Export_${new Date().toISOString().split('T')[0]}.xlsx`);
     }
 
-    // Auto-refresh every 30 seconds for all users
+    // Startup
+    checkAuth();
     loadData();
-    setInterval(loadData, 30000);
+    setInterval(loadData, 15000); // 15-second background auto-sync
   </script>
 </body>
 </html>
