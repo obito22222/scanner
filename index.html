@@ -149,19 +149,21 @@
     </div>
   </div>
 
-  <!-- ==================== 4. MODAL DE SAISIE KHALID & PORT (HIDDEN POPUP FORM) ==================== -->
+  <!-- ==================== 4. MODAL DE SAISIE / MODIFICATION PORT ==================== -->
   <div id="portEntryModal" class="fixed inset-0 bg-slate-950/90 z-40 hidden flex items-center justify-center p-4 backdrop-blur-sm overflow-y-auto">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 max-w-4xl w-full shadow-2xl space-y-4 my-8">
       <div class="flex justify-between items-center border-b border-slate-700 pb-3">
         <div class="flex items-center gap-2">
           <i class="fa-solid fa-ship text-blue-400 text-lg"></i>
-          <h2 class="text-base font-bold text-white uppercase tracking-wider">Formulaire de Saisie Port Tanger Med</h2>
+          <h2 id="modalTitle" class="text-base font-bold text-white uppercase tracking-wider">Saisie / Modification Remorque Port</h2>
         </div>
         <button onclick="togglePortEntryModal()" class="text-slate-400 hover:text-white text-lg font-bold">✕</button>
       </div>
 
-      <form id="entryForm" onsubmit="addFullTrailer(event)" class="space-y-4">
-        <!-- Row 1: Identification & Transit -->
+      <form id="entryForm" onsubmit="saveTrailer(event)" class="space-y-4">
+        <input type="hidden" id="editTrailerId">
+
+        <!-- Row 1 -->
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
           <div>
             <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">Matricule Remorque *</label>
@@ -184,7 +186,7 @@
           </div>
         </div>
 
-        <!-- Row 2: Dédouanement & Traction -->
+        <!-- Row 2 -->
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
           <div>
             <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">État Dédouanement</label>
@@ -216,7 +218,7 @@
           </div>
         </div>
 
-        <!-- Row 3: Documents Compliance -->
+        <!-- Row 3: Documents -->
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 bg-slate-900/60 p-3 rounded-lg border border-slate-700/60">
           <div>
             <label class="block text-[10px] font-semibold text-slate-400 mb-1 uppercase">BAD</label>
@@ -279,25 +281,22 @@
             Annuler
           </button>
           <button type="submit" id="submitBtn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-6 py-2 rounded-lg text-sm transition shadow flex items-center gap-2">
-            <i class="fa-solid fa-plus"></i>
-            <span>Enregistrer dans la base</span>
+            <i class="fa-solid fa-floppy-disk"></i>
+            <span>Enregistrer</span>
           </button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- ==================== 5. WELCOME SCREEN / 3 PORTAL BUTTONS ==================== -->
+  <!-- ==================== 5. WELCOME SCREEN ==================== -->
   <div id="welcomeScreen" class="flex-1 flex flex-col justify-center items-center p-6 max-w-6xl mx-auto w-full space-y-8 animate-fade-in">
     <div class="text-center space-y-2">
       <h2 class="text-3xl font-extrabold text-white tracking-wide">Bienvenue sur le Portail SJL Opérations</h2>
       <p class="text-sm text-slate-400">Sélectionnez votre espace de travail opérationnel</p>
     </div>
 
-    <!-- 3 Action Cards -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
-      
-      <!-- Card 1: Khalid & Port Team -->
       <div onclick="openModule('PORT')" class="bg-slate-800 border border-slate-700 hover:border-blue-500 rounded-2xl p-6 shadow-xl cursor-pointer transform hover:-translate-y-1.5 transition-all group flex flex-col justify-between">
         <div class="space-y-4">
           <div class="w-12 h-12 bg-blue-600/20 group-hover:bg-blue-600 text-blue-400 group-hover:text-white rounded-xl flex items-center justify-center text-2xl transition">
@@ -306,7 +305,7 @@
           <div>
             <h3 class="text-lg font-bold text-white group-hover:text-blue-400 transition">1. Saisie Port Tanger Med</h3>
             <p class="text-xs text-slate-400 mt-1 leading-relaxed">
-              Espace dédié à Khalid et l'équipe Port pour enregistrer les arrivées, l'état de dédouanement et les sorties de port.
+              Enregistrer les arrivées, l'état de dédouanement et mettre à jour les sorties de port des remorques.
             </p>
           </div>
         </div>
@@ -316,7 +315,6 @@
         </div>
       </div>
 
-      <!-- Card 2: Chargés Clientèle -->
       <div onclick="openModule('PLANNING')" class="bg-slate-800 border border-slate-700 hover:border-purple-500 rounded-2xl p-6 shadow-xl cursor-pointer transform hover:-translate-y-1.5 transition-all group flex flex-col justify-between">
         <div class="space-y-4">
           <div class="w-12 h-12 bg-purple-600/20 group-hover:bg-purple-600 text-purple-400 group-hover:text-white rounded-xl flex items-center justify-center text-2xl transition">
@@ -325,7 +323,7 @@
           <div>
             <h3 class="text-lg font-bold text-white group-hover:text-purple-400 transition">2. Planning & Attribution Export</h3>
             <p class="text-xs text-slate-400 mt-1 leading-relaxed">
-              Espace dédié aux chargés de clientèle pour consulter les remorques disponibles et réserver une unité sans doublon.
+              Consulter les remorques disponibles et réserver une unité sans risque de doublon entre les plannings.
             </p>
           </div>
         </div>
@@ -335,7 +333,6 @@
         </div>
       </div>
 
-      <!-- Card 3: Dashboard -->
       <div onclick="openModule('DASHBOARD')" class="bg-slate-800 border border-slate-700 hover:border-emerald-500 rounded-2xl p-6 shadow-xl cursor-pointer transform hover:-translate-y-1.5 transition-all group flex flex-col justify-between">
         <div class="space-y-4">
           <div class="w-12 h-12 bg-emerald-600/20 group-hover:bg-emerald-600 text-emerald-400 group-hover:text-white rounded-xl flex items-center justify-center text-2xl transition">
@@ -344,7 +341,7 @@
           <div>
             <h3 class="text-lg font-bold text-white group-hover:text-emerald-400 transition">3. Dashboard Triptyque 360°</h3>
             <p class="text-xs text-slate-400 mt-1 leading-relaxed">
-              Vue globale sur le compte à rebours 30 jours, conformité des plis et alertes critiques.
+              Vue globale sur le compte à rebours 30 jours, conformité des plis et alertes critiques douanes.
             </p>
           </div>
         </div>
@@ -353,14 +350,12 @@
           <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition"></i>
         </div>
       </div>
-
     </div>
   </div>
 
-  <!-- ==================== 6. WORKSPACE CONTAINER (MAIN APP) ==================== -->
+  <!-- ==================== 6. WORKSPACE CONTAINER ==================== -->
   <main id="workspaceScreen" class="hidden flex-1 p-4 sm:p-6 max-w-7xl w-full mx-auto space-y-6">
 
-    <!-- Sub-Navbar Tabs -->
     <div class="bg-slate-800 border border-slate-700 rounded-xl p-2 flex flex-wrap gap-2">
       <button id="tabPortBtn" onclick="openModule('PORT')" class="px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 text-slate-400 hover:text-white">
         <i class="fa-solid fa-ship"></i> 1. Suivi Port Tanger Med
@@ -373,25 +368,22 @@
       </button>
     </div>
 
-    <!-- ==================== MODULE 1: PORT VIEW ==================== -->
+    <!-- MODULE 1: PORT VIEW -->
     <div id="modulePort" class="space-y-6 hidden">
-      <!-- Clean Top Action Bar with Saisie Trigger Button -->
       <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl flex flex-wrap items-center justify-between gap-4 shadow">
         <div>
           <h3 class="text-sm font-bold text-white uppercase tracking-wider">Suivi Journalier Flux Port Tanger Med</h3>
-          <p class="text-xs text-slate-400 mt-0.5">Consultez l'état d'avancement des dédouanements et des sorties de port.</p>
+          <p class="text-xs text-slate-400 mt-0.5">Mettez à jour les statuts de dédouanement et ajoutez la date de sortie port.</p>
         </div>
 
-        <!-- Saisie Trigger Button (Only visible to Port Ops & Supervisor) -->
         <div id="portAddBtnContainer" class="hidden">
-          <button onclick="togglePortEntryModal()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-2.5 rounded-lg text-xs transition shadow flex items-center gap-2">
+          <button onclick="openNewTrailerModal()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-2.5 rounded-lg text-xs transition shadow flex items-center gap-2">
             <i class="fa-solid fa-circle-plus text-sm"></i>
-            <span>+ Saisir une Remorque (Sortie / Arrivée Port)</span>
+            <span>+ Saisir une Remorque</span>
           </button>
         </div>
       </div>
 
-      <!-- Port Operations Table -->
       <div class="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow">
         <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-900/60">
           <div class="flex items-center gap-2">
@@ -418,7 +410,7 @@
                 <th class="py-2.5 px-2 text-center">CG</th>
                 <th class="py-2.5 px-2 text-center">Assur</th>
                 <th class="py-2.5 px-2 text-center">VT</th>
-                <th class="py-2.5 px-3 text-right">Action</th>
+                <th class="py-2.5 px-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody id="portTableBody" class="divide-y divide-slate-700/60 font-medium"></tbody>
@@ -427,8 +419,7 @@
       </div>
     </div>
 
-
-    <!-- ==================== MODULE 2: PLANNING EXPORT ==================== -->
+    <!-- MODULE 2: PLANNING EXPORT -->
     <div id="modulePlanning" class="space-y-6 hidden">
       <div class="bg-purple-950/30 border border-purple-800/40 p-4 rounded-xl flex items-center justify-between">
         <div>
@@ -444,7 +435,7 @@
             <thead class="bg-slate-900/90 text-slate-400 uppercase font-semibold border-b border-slate-700">
               <tr>
                 <th class="py-3 px-4">Matricule</th>
-                <th class="py-3 px-4">Client / Destination</th>
+                <th class="py-3 px-4">Client</th>
                 <th class="py-3 px-4">Sortie Port</th>
                 <th class="py-3 px-4">Triptyque Restant</th>
                 <th class="py-3 px-4 text-center">Pli & Documents</th>
@@ -458,10 +449,8 @@
       </div>
     </div>
 
-
-    <!-- ==================== MODULE 3: DASHBOARD & TRIPTYQUE 360° ==================== -->
+    <!-- MODULE 3: DASHBOARD -->
     <div id="moduleDashboard" class="space-y-6 hidden">
-      <!-- Live KPIs -->
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl flex items-center justify-between">
           <div>
@@ -496,11 +485,10 @@
         </div>
       </div>
 
-      <!-- Filters & Search -->
       <div class="flex flex-wrap gap-3 items-center justify-between">
         <div class="relative flex-1 min-w-[240px]">
           <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-xs"></i>
-          <input type="text" id="searchInput" oninput="render()" placeholder="Rechercher par matricule, client, chauffeur..." class="w-full bg-slate-800 border border-slate-700 rounded-lg pl-9 pr-4 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+          <input type="text" id="searchInput" oninput="render()" placeholder="Rechercher par matricule, client..." class="w-full bg-slate-800 border border-slate-700 rounded-lg pl-9 pr-4 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
         </div>
 
         <select id="filterStatus" onchange="render()" class="bg-slate-800 border border-slate-700 text-slate-300 text-xs rounded-lg px-3 py-2.5 focus:outline-none focus:border-blue-500">
@@ -513,7 +501,6 @@
         </select>
       </div>
 
-      <!-- Dashboard Table -->
       <div class="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow">
         <div class="overflow-x-auto">
           <table class="w-full text-left text-xs text-slate-300">
@@ -543,16 +530,6 @@
     let usersList = {};
     let activeModule = 'WELCOME';
 
-    const now = new Date();
-    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-    document.getElementById('inputDateArrivee').value = now.toISOString().slice(0, 16);
-
-    function toggleAuthMode(isSignup) {
-      document.getElementById('loginForm').classList.toggle('hidden', isSignup);
-      document.getElementById('signupForm').classList.toggle('hidden', !isSignup);
-      document.getElementById('authError').classList.add('hidden');
-    }
-
     const ROLE_TITLES = {
       'SUPERVISOR': 'Superviseur / Direction',
       'ADMIN': 'Superviseur / Direction',
@@ -566,11 +543,46 @@
     }
 
     function togglePortEntryModal() {
-      const modal = document.getElementById('portEntryModal');
-      modal.classList.toggle('hidden');
+      document.getElementById('portEntryModal').classList.toggle('hidden');
     }
 
-    // Navigation System
+    function openNewTrailerModal() {
+      document.getElementById('editTrailerId').value = '';
+      document.getElementById('modalTitle').innerText = 'Saisie Nouvelle Remorque Port';
+      document.getElementById('entryForm').reset();
+      
+      const now = new Date();
+      now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+      document.getElementById('inputDateArrivee').value = now.toISOString().slice(0, 16);
+      
+      togglePortEntryModal();
+    }
+
+    function openEditTrailerModal(id) {
+      const item = rawList.find(i => i.id === id);
+      if (!item) return;
+
+      document.getElementById('editTrailerId').value = item.id;
+      document.getElementById('modalTitle').innerText = `Modifier Remorque: ${item.matricule}`;
+
+      document.getElementById('inputMatricule').value = item.matricule;
+      document.getElementById('inputClient').value = item.client;
+      document.getElementById('inputTransitaire').value = item.transitaire !== '-' ? item.transitaire : '';
+      document.getElementById('inputDateArrivee').value = item.dateArrivee !== '-' ? item.dateArrivee : '';
+      document.getElementById('inputEtatDedouanement').value = item.etatDedouanement;
+      document.getElementById('inputChauffeur').value = item.chauffeur !== '-' ? item.chauffeur : '';
+      document.getElementById('inputDateSortie').value = item.rawDateSortie || '';
+      document.getElementById('inputScellees').value = item.scellees !== '-' ? item.scellees : '';
+      document.getElementById('inputBAD').value = item.bad;
+      document.getElementById('inputPli').value = item.pli;
+      document.getElementById('inputEUR1').value = item.eur1;
+      document.getElementById('inputCarteGrise').value = item.carteGrise;
+      document.getElementById('inputAssur').value = item.assur;
+      document.getElementById('inputVT').value = item.vt;
+
+      togglePortEntryModal();
+    }
+
     function showWelcomeScreen() {
       activeModule = 'WELCOME';
       document.getElementById('welcomeScreen').classList.remove('hidden');
@@ -619,7 +631,6 @@
           document.getElementById('adminBtn').classList.add('hidden');
         }
 
-        // Show/Hide Saisie Add Button for Port Ops & Supervisor
         const canAddPort = currentUser.role === 'PORT_OPS' || isSupervisor(currentUser.role);
         document.getElementById('portAddBtnContainer').classList.toggle('hidden', !canAddPort);
       }
@@ -638,7 +649,7 @@
         return;
       }
 
-      const initialRole = (username === 'zouhair') ? 'SUPERVISOR' : 'OPERATOR';
+      const initialRole = (username.includes('zouhair') || username === 'admin') ? 'SUPERVISOR' : 'OPERATOR';
       const userData = { username, password, role: initialRole, createdAt: new Date().toISOString() };
       
       await fetch(`${DB_URL}/users/${username}.json`, {
@@ -722,7 +733,8 @@
               dateArrivee: item.dateArrivee || "-",
               etatDedouanement: item.etatDedouanement || "En cours",
               chauffeur: item.chauffeur || "-",
-              dateSortie: item.dateSortie || null,
+              dateSortie: item.dateSortie ? new Date(item.dateSortie).toLocaleDateString('fr-FR') : null,
+              rawDateSortie: item.dateSortie || '',
               scellees: item.scellees || "-",
               bad: item.bad || "NON",
               pli: item.pli || "A_CONFIRMER",
@@ -758,13 +770,14 @@
       }
     }
 
-    async function addFullTrailer(e) {
+    async function saveTrailer(e) {
       e.preventDefault();
       if (currentUser.role !== 'PORT_OPS' && !isSupervisor(currentUser.role)) {
         alert("Action réservée à l'équipe Port Tanger Med.");
         return;
       }
 
+      const editId = document.getElementById('editTrailerId').value;
       const btn = document.getElementById('submitBtn');
       btn.disabled = true;
       btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Enregistrement...`;
@@ -786,30 +799,34 @@
         assur: document.getElementById('inputAssur').value,
         vt: document.getElementById('inputVT').value,
         timestamp: new Date().toISOString(),
-        addedBy: username,
-        bookedBy: null
+        updatedBy: username
       };
 
       try {
-        await fetch(`${DB_URL}/trailers.json`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
+        if (editId) {
+          // Update existing trailer
+          await fetch(`${DB_URL}/trailers/${editId}.json`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+        } else {
+          // Create new trailer
+          payload.bookedBy = null;
+          await fetch(`${DB_URL}/trailers.json`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+        }
 
-        document.getElementById('inputMatricule').value = '';
-        document.getElementById('inputClient').value = '';
-        document.getElementById('inputChauffeur').value = '';
-        document.getElementById('inputScellees').value = '';
-        document.getElementById('inputDateSortie').value = '';
-        
         togglePortEntryModal();
         await loadData();
       } catch (err) {
         alert("Erreur: " + err.message);
       } finally {
         btn.disabled = false;
-        btn.innerHTML = `<i class="fa-solid fa-plus"></i> <span>Enregistrer dans la base</span>`;
+        btn.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> <span>Enregistrer</span>`;
       }
     }
 
@@ -883,11 +900,16 @@
           let chStyle = row.chauffeur.toUpperCase().includes("BESOIN") ? "text-rose-400 font-bold" : "text-slate-300";
           let etatStyle = row.etatDedouanement.toUpperCase().includes("BIEN") ? "text-emerald-400 font-bold" : "text-amber-400";
 
-          const canDelete = currentUser && (currentUser.role === 'PORT_OPS' || isSupervisor(currentUser.role));
-          const delBtn = canDelete ? `
-            <button onclick="deleteTrailer('${row.id}')" title="Supprimer / Clôturer" class="text-slate-500 hover:text-rose-400 p-1">
-              <i class="fa-solid fa-trash-can"></i>
-            </button>
+          const canEditDelete = currentUser && (currentUser.role === 'PORT_OPS' || isSupervisor(currentUser.role));
+          const actionsCol = canEditDelete ? `
+            <div class="flex items-center justify-end gap-1.5">
+              <button onclick="openEditTrailerModal('${row.id}')" title="Modifier les informations" class="text-slate-400 hover:text-blue-400 p-1">
+                <i class="fa-solid fa-pen-to-square"></i>
+              </button>
+              <button onclick="deleteTrailer('${row.id}')" title="Clôturer / Supprimer" class="text-slate-400 hover:text-rose-400 p-1">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </div>
           ` : '-';
 
           portBody.innerHTML += `
@@ -895,7 +917,7 @@
               <td class="py-2 px-3 font-bold text-yellow-300">${row.matricule}</td>
               <td class="py-2 px-3">${row.client}</td>
               <td class="py-2 px-3 text-slate-400">${row.transitaire}</td>
-              <td class="py-2 px-3">${row.dateArrivee.replace('T', ' ')}</td>
+              <td class="py-2 px-3">${row.dateArrivee !== '-' ? row.dateArrivee.replace('T', ' ') : '-'}</td>
               <td class="py-2 px-3 ${etatStyle}">${row.etatDedouanement}</td>
               <td class="py-2 px-3 ${chStyle}">${row.chauffeur}</td>
               <td class="py-2 px-3 font-bold ${row.dateSortie ? 'text-emerald-400' : 'text-slate-500'}">${row.dateSortie || 'Au Port'}</td>
@@ -905,7 +927,7 @@
               <td class="py-2 px-2 text-center">${badgeDoc(row.carteGrise)}</td>
               <td class="py-2 px-2 text-center">${badgeDoc(row.assur)}</td>
               <td class="py-2 px-2 text-center">${badgeDoc(row.vt)}</td>
-              <td class="py-2 px-3 text-right">${delBtn}</td>
+              <td class="py-2 px-3 text-right">${actionsCol}</td>
             </tr>
           `;
         });
@@ -935,16 +957,13 @@
       document.getElementById('kpiWarning').innerText = triptyqueList.filter(i => i.status === "WARNING").length;
       document.getElementById('kpiBooked').innerText = triptyqueList.filter(i => !!i.bookedBy).length;
 
-      // 2. RENDER PLANNING TABLE
       const planBody = document.getElementById('planningTableBody');
       planBody.innerHTML = '';
-
-      // 3. RENDER DASHBOARD TABLE
       const dashBody = document.getElementById('dashboardTableBody');
       dashBody.innerHTML = '';
 
       if (triptyqueList.length === 0) {
-        const emptyMsg = `<tr><td colspan="8" class="text-center py-8 text-slate-500">Aucune remorque trouvée.</td></tr>`;
+        const emptyMsg = `<tr><td colspan="8" class="text-center py-8 text-slate-500">Aucune remorque en circulation (nécessite une date de sortie port).</td></tr>`;
         planBody.innerHTML = emptyMsg;
         dashBody.innerHTML = emptyMsg;
       } else {
@@ -1081,7 +1100,7 @@
         "DATE ARRIVEE PORT": item.dateArrivee,
         "ETAT DEDOUANEMENT": item.etatDedouanement,
         "CHAUFFEUR / TRACTION": item.chauffeur,
-        "DATE SORTIE PORT": item.dateSortie || "AU PORT",
+        "DATE SORTIE PORT": item.rawDateSortie || "AU PORT",
         "BAD": item.bad,
         "PLI": item.pli,
         "EUR1": item.eur1,
