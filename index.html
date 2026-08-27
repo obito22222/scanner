@@ -64,7 +64,7 @@
         </div>
 
         <div class="bg-slate-900/80 p-3 rounded-lg border border-slate-700 text-[11px] text-amber-300">
-          <i class="fa-solid fa-info-circle mr-1"></i> Tout nouveau compte est initialisé en rôle <strong>Opérateur (Lecture seule)</strong> jusqu'à validation par le superviseur.
+          <i class="fa-solid fa-info-circle mr-1"></i> Tout nouveau compte est créé en <strong>Opérateur (Lecture seule)</strong> en attendant l'attribution de votre rôle par Zouhair.
         </div>
 
         <button type="submit" id="signupBtn" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-lg shadow-lg text-sm transition flex items-center justify-center gap-2">
@@ -98,16 +98,18 @@
     </div>
     
     <div class="flex items-center space-x-3">
-      <!-- Supervisor Admin Button -->
-      <button id="adminBtn" onclick="toggleAdminModal()" class="hidden bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold px-3 py-2 rounded-lg transition flex items-center gap-1.5 shadow">
-        <i class="fa-solid fa-users-gear"></i> Gérer Rôles Utilisateurs
+      <!-- Supervisor Admin Button with User Badge Counter -->
+      <button id="adminBtn" onclick="toggleAdminModal()" class="hidden bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold px-3 py-2 rounded-lg transition flex items-center gap-2 shadow">
+        <i class="fa-solid fa-users-gear"></i>
+        <span>Gérer Utilisateurs</span>
+        <span id="pendingBadge" class="hidden bg-rose-500 text-white font-bold text-[10px] px-1.5 py-0.2 rounded-full">0</span>
       </button>
 
       <!-- User Badge -->
       <div class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs flex items-center gap-2">
         <i class="fa-solid fa-user-shield text-blue-400"></i>
         <div>
-          <span id="userBadgeName" class="font-bold text-white">Utilisateur</span>
+          <span id="userBadgeName" class="font-bold text-white uppercase">Utilisateur</span>
           <span id="userBadgeRole" class="text-[10px] text-amber-400 font-semibold block">-</span>
         </div>
         <button onclick="logout()" title="Déconnexion" class="text-slate-500 hover:text-rose-400 ml-2">
@@ -138,7 +140,7 @@
             <tr>
               <th class="py-2.5 px-3">Utilisateur</th>
               <th class="py-2.5 px-3">Rôle Actuel</th>
-              <th class="py-2.5 px-3 text-right">Attribuer Nouveau Rôle</th>
+              <th class="py-2.5 px-3 text-right">Modifier Rôle</th>
             </tr>
           </thead>
           <tbody id="usersTableBody" class="divide-y divide-slate-700">
@@ -152,7 +154,7 @@
   <!-- ==================== 4. MAIN APPLICATION DASHBOARD ==================== -->
   <main class="flex-1 p-4 sm:p-6 max-w-7xl w-full mx-auto space-y-6">
 
-    <!-- Saisie Section (Restricted to PORT_OPS & SUPERVISOR) -->
+    <!-- Saisie Section (Restricted to PORT_OPS, ADMIN & SUPERVISOR) -->
     <div id="portOpsSection" class="hidden bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-lg">
       <div class="flex items-center gap-2 mb-3">
         <i class="fa-solid fa-circle-plus text-blue-400"></i>
@@ -281,31 +283,36 @@
       document.getElementById('authError').classList.add('hidden');
     }
 
-    // Role display titles
     const ROLE_TITLES = {
       'SUPERVISOR': 'Superviseur / Direction',
+      'ADMIN': 'Superviseur / Direction',
       'PORT_OPS': 'Port Tanger Med (Saisie)',
       'CHARGE_CLIENT': 'Chargé de Clientèle',
       'OPERATOR': 'Opérateur (Lecture Seule)'
     };
+
+    function isSupervisorRole(role) {
+      return role === 'SUPERVISOR' || role === 'ADMIN';
+    }
 
     function checkAuth() {
       if (!currentUser) {
         document.getElementById('authScreen').classList.remove('hidden');
       } else {
         document.getElementById('authScreen').classList.add('hidden');
-        document.getElementById('userBadgeName').innerText = currentUser.username;
+        const username = currentUser.username || currentUser.name || "Zouhair";
+        document.getElementById('userBadgeName').innerText = username;
         document.getElementById('userBadgeRole').innerText = ROLE_TITLES[currentUser.role] || currentUser.role;
 
-        // Show Supervisor Admin Button
-        if (currentUser.role === 'SUPERVISOR') {
+        // Show Supervisor Button
+        if (isSupervisorRole(currentUser.role)) {
           document.getElementById('adminBtn').classList.remove('hidden');
         } else {
           document.getElementById('adminBtn').classList.add('hidden');
         }
 
         // Show/Hide Port Entry input
-        if (currentUser.role === 'PORT_OPS' || currentUser.role === 'SUPERVISOR') {
+        if (currentUser.role === 'PORT_OPS' || isSupervisorRole(currentUser.role)) {
           document.getElementById('portOpsSection').classList.remove('hidden');
         } else {
           document.getElementById('portOpsSection').classList.add('hidden');
@@ -318,7 +325,6 @@
       const username = document.getElementById('signupUsername').value.trim().toLowerCase();
       const password = document.getElementById('signupPassword').value.trim();
 
-      // Check if user already exists
       const res = await fetch(`${DB_URL}/users/${username}.json`);
       const existing = await res.json();
 
@@ -327,7 +333,7 @@
         return;
       }
 
-      // If it's the very first supervisor account (zouhair), give SUPERVISOR role, else default to OPERATOR
+      // Zouhair gets SUPERVISOR, everyone else gets OPERATOR
       const initialRole = (username === 'zouhair') ? 'SUPERVISOR' : 'OPERATOR';
 
       const userData = { username, password, role: initialRole, createdAt: new Date().toISOString() };
@@ -370,23 +376,22 @@
       checkAuth();
     }
 
-    // Load fleet data & refresh current user role in background
     async function loadData() {
       if (!DB_URL || DB_URL.includes("YOUR-PROJECT-NAME")) return;
 
       try {
-        // Sync role live
-        if (currentUser) {
-          const userRes = await fetch(`${DB_URL}/users/${currentUser.username}.json`);
+        const username = currentUser ? (currentUser.username || currentUser.name) : null;
+        if (username) {
+          const userRes = await fetch(`${DB_URL}/users/${username.toLowerCase()}.json`);
           const freshUserData = await userRes.json();
           if (freshUserData) {
-            currentUser.role = freshUserData.role;
+            currentUser = freshUserData;
             localStorage.setItem('sjl_user', JSON.stringify(currentUser));
-            document.getElementById('userBadgeRole').innerText = ROLE_TITLES[currentUser.role] || currentUser.role;
             checkAuth();
           }
         }
 
+        // Fetch Fleet
         const res = await fetch(`${DB_URL}/trailers.json`);
         const data = await res.json();
         
@@ -412,6 +417,21 @@
             });
           });
         }
+
+        // Fetch Users count if supervisor
+        if (currentUser && isSupervisorRole(currentUser.role)) {
+          const usersRes = await fetch(`${DB_URL}/users.json`);
+          usersList = await usersRes.json() || {};
+          const pendingCount = Object.values(usersList).filter(u => u.role === 'OPERATOR').length;
+          const badge = document.getElementById('pendingBadge');
+          if (pendingCount > 0) {
+            badge.innerText = `${pendingCount} new`;
+            badge.classList.remove('hidden');
+          } else {
+            badge.classList.add('hidden');
+          }
+        }
+
         render();
       } catch (err) {
         console.error("Database connection error:", err);
@@ -420,7 +440,7 @@
 
     async function addTrailer(e) {
       e.preventDefault();
-      if (currentUser.role !== 'PORT_OPS' && currentUser.role !== 'SUPERVISOR') {
+      if (currentUser.role !== 'PORT_OPS' && !isSupervisorRole(currentUser.role)) {
         alert("Action réservée à l'équipe Port Tanger Med.");
         return;
       }
@@ -429,13 +449,14 @@
       btn.disabled = true;
       btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`;
 
+      const username = currentUser.username || currentUser.name;
       const payload = {
         matricule: document.getElementById('inputMatricule').value.trim().toUpperCase(),
         client: document.getElementById('inputClient').value.trim(),
         chauffeur: document.getElementById('inputChauffeur').value.trim(),
         dateSortie: document.getElementById('inputDate').value,
         timestamp: new Date().toISOString(),
-        addedBy: currentUser.username,
+        addedBy: username,
         bookedBy: null
       };
 
@@ -459,17 +480,18 @@
     }
 
     async function bookTrailer(id, matricule) {
-      if (currentUser.role !== 'CHARGE_CLIENT' && currentUser.role !== 'SUPERVISOR') {
+      if (currentUser.role !== 'CHARGE_CLIENT' && !isSupervisorRole(currentUser.role)) {
         alert("Action réservée aux Chargés de Clientèle.");
         return;
       }
 
       if (!confirm(`Confirmez-vous la réservation de la remorque ${matricule} pour votre client ?`)) return;
 
+      const username = currentUser.username || currentUser.name;
       try {
         await fetch(`${DB_URL}/trailers/${id}/bookedBy.json`, {
           method: "PUT",
-          body: JSON.stringify(currentUser.username)
+          body: JSON.stringify(username)
         });
         await loadData();
       } catch (err) {
@@ -489,7 +511,7 @@
     }
 
     async function deleteTrailer(id) {
-      if (currentUser.role !== 'PORT_OPS' && currentUser.role !== 'SUPERVISOR') {
+      if (currentUser.role !== 'PORT_OPS' && !isSupervisorRole(currentUser.role)) {
         alert("Action réservée à l'équipe Port.");
         return;
       }
@@ -503,7 +525,7 @@
       }
     }
 
-    // Supervisor User Management
+    // Supervisor User Management Modal
     async function toggleAdminModal() {
       const modal = document.getElementById('adminModal');
       modal.classList.toggle('hidden');
@@ -521,16 +543,20 @@
 
       Object.keys(usersList).forEach(username => {
         const u = usersList[username];
+        const isOperator = u.role === 'OPERATOR';
         tbody.innerHTML += `
           <tr class="hover:bg-slate-700/40">
-            <td class="py-3 px-3 font-bold text-white capitalize">${u.username}</td>
+            <td class="py-3 px-3 font-bold text-white capitalize flex items-center gap-2">
+              <span>${u.username}</span>
+              ${isOperator ? '<span class="bg-amber-900/80 text-amber-300 text-[10px] px-1.5 py-0.5 rounded border border-amber-600">Nouveau</span>' : ''}
+            </td>
             <td class="py-3 px-3 text-amber-400 font-semibold">${ROLE_TITLES[u.role] || u.role}</td>
             <td class="py-3 px-3 text-right">
               <select onchange="updateUserRole('${u.username}', this.value)" class="bg-slate-900 border border-slate-600 rounded px-2 py-1 text-xs text-white">
                 <option value="OPERATOR" ${u.role === 'OPERATOR' ? 'selected' : ''}>Opérateur (Lecture)</option>
                 <option value="CHARGE_CLIENT" ${u.role === 'CHARGE_CLIENT' ? 'selected' : ''}>Chargé de Clientèle</option>
                 <option value="PORT_OPS" ${u.role === 'PORT_OPS' ? 'selected' : ''}>Port Tanger Med</option>
-                <option value="SUPERVISOR" ${u.role === 'SUPERVISOR' ? 'selected' : ''}>Superviseur</option>
+                <option value="SUPERVISOR" ${isSupervisorRole(u.role) ? 'selected' : ''}>Superviseur</option>
               </select>
             </td>
           </tr>
@@ -543,8 +569,9 @@
         method: "PUT",
         body: JSON.stringify(newRole)
       });
-      alert(`Rôle de ${targetUsername} mis à jour avec succès !`);
+      alert(`Rôle de ${targetUsername} mis à jour vers: ${ROLE_TITLES[newRole]}`);
       loadUsersList();
+      loadData();
     }
 
     function render() {
@@ -581,6 +608,8 @@
         return;
       }
 
+      const activeUser = currentUser ? (currentUser.username || currentUser.name) : '';
+
       filtered.forEach(row => {
         let badgeClass = "bg-emerald-900/60 text-emerald-300 border-emerald-700";
         let statusText = `${row.daysRemaining}j restants`;
@@ -594,7 +623,7 @@
 
         let bookingCol = '';
         if (row.bookedBy) {
-          const isMine = currentUser && (currentUser.username === row.bookedBy || currentUser.role === 'SUPERVISOR');
+          const isMine = activeUser === row.bookedBy || isSupervisorRole(currentUser.role);
           bookingCol = `
             <div class="flex items-center justify-center gap-1.5">
               <span class="inline-flex items-center gap-1 bg-purple-950/80 border border-purple-700 text-purple-300 px-2.5 py-1 rounded-lg text-[11px] font-bold">
@@ -604,7 +633,7 @@
             </div>
           `;
         } else {
-          const canBook = currentUser && (currentUser.role === 'CHARGE_CLIENT' || currentUser.role === 'SUPERVISOR');
+          const canBook = currentUser && (currentUser.role === 'CHARGE_CLIENT' || isSupervisorRole(currentUser.role));
           bookingCol = canBook ? `
             <div class="text-center">
               <button onclick="bookTrailer('${row.id}', '${row.matricule}')" class="bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white border border-blue-600/50 px-2.5 py-1 rounded-md text-[11px] font-semibold transition">
@@ -614,7 +643,7 @@
           ` : `<span class="text-slate-500 text-[11px] italic">Disponible</span>`;
         }
 
-        const canDelete = currentUser && (currentUser.role === 'PORT_OPS' || currentUser.role === 'SUPERVISOR');
+        const canDelete = currentUser && (currentUser.role === 'PORT_OPS' || isSupervisorRole(currentUser.role));
         const actionCol = canDelete ? `
           <button onclick="deleteTrailer('${row.id}')" title="Clôturer Triptyque (Embarquée / Exportée)" class="text-slate-500 hover:text-emerald-400 p-1 transition">
             <i class="fa-solid fa-ship"></i>
@@ -664,7 +693,7 @@
     // Startup
     checkAuth();
     loadData();
-    setInterval(loadData, 15000);
+    setInterval(loadData, 10000);
   </script>
 </body>
 </html>
