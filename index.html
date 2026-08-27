@@ -21,6 +21,7 @@
     const DB_URL = "https://sjl-fleet-triptyque-default-rtdb.firebaseio.com";
   </script>
 
+  <!-- ==================== 1. AUTHENTICATION MODAL ==================== -->
   <div id="authScreen" class="fixed inset-0 bg-slate-950/95 z-50 flex items-center justify-center p-4 backdrop-blur-md">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-6">
       <div class="text-center space-y-2">
@@ -28,7 +29,7 @@
           <i class="fa-solid fa-ship text-2xl text-white"></i>
         </div>
         <h2 class="text-xl font-bold text-white tracking-wide">SJL Live Fleet & Port Hub</h2>
-        <p class="text-xs text-slate-400">Port Tanger Med & Gestion Triptyque Douanes</p>
+        <p class="text-xs text-slate-400">Authentification sécurisée à la plateforme</p>
       </div>
 
       <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
@@ -77,8 +78,9 @@
     </div>
   </div>
 
+  <!-- ==================== 2. TOP NAVBAR ==================== -->
   <header class="bg-slate-800 border-b border-slate-700 px-6 py-3.5 flex flex-wrap justify-between items-center gap-4">
-    <div class="flex items-center space-x-3">
+    <div class="flex items-center space-x-3 cursor-pointer" onclick="showWelcomeScreen()">
       <div class="bg-blue-600 text-white p-2.5 rounded-lg shadow">
         <i class="fa-solid fa-truck-ramp-box text-xl"></i>
       </div>
@@ -89,17 +91,24 @@
             <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> SYNC LIVE
           </span>
         </div>
-        <p class="text-xs text-slate-400">Tanger Med Port Flow • Dédouanement • Plis Documentaires • Triptyque</p>
+        <p class="text-xs text-slate-400">Port Tanger Med • Suivi Triptyque • Attribution Planning</p>
       </div>
     </div>
     
     <div class="flex items-center space-x-3">
+      <!-- Back to Welcome Screen Button -->
+      <button onclick="showWelcomeScreen()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold px-3 py-2 rounded-lg transition flex items-center gap-1.5 shadow">
+        <i class="fa-solid fa-house"></i> Accueil
+      </button>
+
+      <!-- Supervisor Admin Button -->
       <button id="adminBtn" onclick="toggleAdminModal()" class="hidden bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold px-3 py-2 rounded-lg transition flex items-center gap-2 shadow">
         <i class="fa-solid fa-users-gear"></i>
         <span>Gérer Rôles</span>
         <span id="pendingBadge" class="hidden bg-rose-500 text-white font-bold text-[10px] px-1.5 py-0.2 rounded-full">0</span>
       </button>
 
+      <!-- User Badge -->
       <div class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs flex items-center gap-2">
         <i class="fa-solid fa-user-shield text-blue-400"></i>
         <div>
@@ -117,17 +126,7 @@
     </div>
   </header>
 
-  <div class="bg-slate-800/80 border-b border-slate-700 px-6 py-2 flex gap-4">
-    <button id="tabPortBtn" onclick="switchTab('PORT')" class="text-sm font-bold text-blue-400 border-b-2 border-blue-500 pb-2 px-2 flex items-center gap-2 transition">
-      <i class="fa-solid fa-ship"></i>
-      <span>1. Suivi Opérations Port Tanger Med (Saisie Khalid)</span>
-    </button>
-    <button id="tabTriptyqueBtn" onclick="switchTab('TRIPTYQUE')" class="text-sm font-semibold text-slate-400 hover:text-slate-200 pb-2 px-2 flex items-center gap-2 transition">
-      <i class="fa-solid fa-clock-rotate-left"></i>
-      <span>2. Master Triptyque & Planning Export (Chargés Clientèle)</span>
-    </button>
-  </div>
-
+  <!-- ==================== 3. SUPERVISOR USER MANAGEMENT MODAL ==================== -->
   <div id="adminModal" class="fixed inset-0 bg-slate-950/90 z-40 hidden flex items-center justify-center p-4 backdrop-blur-sm">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 max-w-2xl w-full shadow-2xl space-y-4">
       <div class="flex justify-between items-center border-b border-slate-700 pb-3">
@@ -153,11 +152,96 @@
     </div>
   </div>
 
-  <main class="flex-1 p-4 sm:p-6 max-w-7xl w-full mx-auto space-y-6">
+  <!-- ==================== 4. WELCOME SCREEN / 3 PORTAL BUTTONS ==================== -->
+  <div id="welcomeScreen" class="flex-1 flex flex-col justify-center items-center p-6 max-w-6xl mx-auto w-full space-y-8 animate-fade-in">
+    <div class="text-center space-y-2">
+      <h2 class="text-3xl font-extrabold text-white tracking-wide">Bienvenue sur le Portail SJL Opérations</h2>
+      <p class="text-sm text-slate-400">Sélectionnez votre espace de travail opérationnel</p>
+    </div>
 
-    <div id="viewPort" class="space-y-6">
+    <!-- 3 Action Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
+      
+      <!-- Card 1: Khalid & Port Team -->
+      <div onclick="openModule('PORT')" class="bg-slate-800 border border-slate-700 hover:border-blue-500 rounded-2xl p-6 shadow-xl cursor-pointer transform hover:-translate-y-1.5 transition-all group flex flex-col justify-between">
+        <div class="space-y-4">
+          <div class="w-12 h-12 bg-blue-600/20 group-hover:bg-blue-600 text-blue-400 group-hover:text-white rounded-xl flex items-center justify-center text-2xl transition">
+            <i class="fa-solid fa-ship"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-white group-hover:text-blue-400 transition">1. Saisie Port Tanger Med</h3>
+            <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+              Espace dédié à Khalid et l'équipe Port pour saisir les arrivées, l'état de dédouanement, les scellées et les dates de sortie.
+            </p>
+          </div>
+        </div>
+        <div class="mt-6 pt-4 border-t border-slate-700/60 flex items-center justify-between text-xs font-semibold text-blue-400">
+          <span>Ouvrir la saisie port</span>
+          <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition"></i>
+        </div>
+      </div>
 
-      <div id="portOpsSection" class="hidden bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-lg">
+      <!-- Card 2: Chargés Clientèle -->
+      <div onclick="openModule('PLANNING')" class="bg-slate-800 border border-slate-700 hover:border-purple-500 rounded-2xl p-6 shadow-xl cursor-pointer transform hover:-translate-y-1.5 transition-all group flex flex-col justify-between">
+        <div class="space-y-4">
+          <div class="w-12 h-12 bg-purple-600/20 group-hover:bg-purple-600 text-purple-400 group-hover:text-white rounded-xl flex items-center justify-center text-2xl transition">
+            <i class="fa-solid fa-hand-pointer"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-white group-hover:text-purple-400 transition">2. Planning & Attribution Export</h3>
+            <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+              Espace dédié aux 10 chargés de clientèle pour consulter les remorques disponibles et réserver une remorque sans risque de doublon.
+            </p>
+          </div>
+        </div>
+        <div class="mt-6 pt-4 border-t border-slate-700/60 flex items-center justify-between text-xs font-semibold text-purple-400">
+          <span>Planifier une remorque</span>
+          <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition"></i>
+        </div>
+      </div>
+
+      <!-- Card 3: Full Dashboard & Analytics -->
+      <div onclick="openModule('DASHBOARD')" class="bg-slate-800 border border-slate-700 hover:border-emerald-500 rounded-2xl p-6 shadow-xl cursor-pointer transform hover:-translate-y-1.5 transition-all group flex flex-col justify-between">
+        <div class="space-y-4">
+          <div class="w-12 h-12 bg-emerald-600/20 group-hover:bg-emerald-600 text-emerald-400 group-hover:text-white rounded-xl flex items-center justify-center text-2xl transition">
+            <i class="fa-solid fa-chart-pie"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-white group-hover:text-emerald-400 transition">3. Dashboard Triptyque 360°</h3>
+            <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+              Vue d'ensemble sur le compte à rebours 30 jours, conformité des plis (Carte Grise / Assurance / VT) et alertes critiques.
+            </p>
+          </div>
+        </div>
+        <div class="mt-6 pt-4 border-t border-slate-700/60 flex items-center justify-between text-xs font-semibold text-emerald-400">
+          <span>Voir le tableau de bord</span>
+          <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition"></i>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ==================== 5. WORKSPACE CONTAINER (MAIN APP) ==================== -->
+  <main id="workspaceScreen" class="hidden flex-1 p-4 sm:p-6 max-w-7xl w-full mx-auto space-y-6">
+
+    <!-- Sub-Navbar Tabs inside Workspace -->
+    <div class="bg-slate-800 border border-slate-700 rounded-xl p-2 flex flex-wrap gap-2">
+      <button id="tabPortBtn" onclick="openModule('PORT')" class="px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 text-slate-400 hover:text-white">
+        <i class="fa-solid fa-ship"></i> 1. Saisie Port Tanger Med
+      </button>
+      <button id="tabPlanningBtn" onclick="openModule('PLANNING')" class="px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 text-slate-400 hover:text-white">
+        <i class="fa-solid fa-hand-pointer"></i> 2. Planning Export
+      </button>
+      <button id="tabDashboardBtn" onclick="openModule('DASHBOARD')" class="px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 text-slate-400 hover:text-white">
+        <i class="fa-solid fa-chart-pie"></i> 3. Dashboard Général
+      </button>
+    </div>
+
+    <!-- ==================== MODULE 1: PORT SAISIE ==================== -->
+    <div id="modulePort" class="space-y-6 hidden">
+      <!-- Saisie Form -->
+      <div id="portOpsSection" class="bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-lg">
         <div class="flex items-center gap-2 mb-3">
           <i class="fa-solid fa-circle-plus text-blue-400"></i>
           <h2 class="text-sm font-bold text-white uppercase tracking-wider">Saisie Complète Flux Port (Exploitation Tanger Med)</h2>
@@ -167,17 +251,17 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
             <div>
               <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">Matricule Remorque *</label>
-              <input type="text" id="inputMatricule" required placeholder="ex: R 4221 BCP ou 7424-011" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-yellow-300 font-bold uppercase focus:outline-none focus:border-blue-500">
+              <input type="text" id="inputMatricule" required placeholder="ex: R 4221 BCP" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-yellow-300 font-bold uppercase focus:outline-none focus:border-blue-500">
             </div>
 
             <div>
               <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">Client *</label>
-              <input type="text" id="inputClient" required placeholder="ex: RENAULT / FAURECIA / LEONI" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+              <input type="text" id="inputClient" required placeholder="ex: RENAULT / LEONI" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
             </div>
 
             <div>
               <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">Transitaire</label>
-              <input type="text" id="inputTransitaire" placeholder="ex: SJL / TTAM / MATRANORD" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+              <input type="text" id="inputTransitaire" placeholder="ex: SJL / TTAM" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
             </div>
 
             <div>
@@ -277,17 +361,18 @@
           <div class="flex justify-end">
             <button type="submit" id="submitBtn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-6 py-2.5 rounded-lg text-sm transition shadow flex items-center gap-2">
               <i class="fa-solid fa-plus"></i>
-              <span>Ajouter cette remorque au suivi Port</span>
+              <span>Enregistrer Sortie / Arrivée Port</span>
             </button>
           </div>
         </form>
       </div>
 
+      <!-- Port Operations Table -->
       <div class="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow">
         <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-900/60">
           <div class="flex items-center gap-2">
             <i class="fa-solid fa-table-list text-blue-400"></i>
-            <h3 class="text-sm font-bold text-white uppercase tracking-wider">Situation Journalière Port Tanger Med (Import)</h3>
+            <h3 class="text-sm font-bold text-white uppercase tracking-wider">Situation Port Tanger Med en Temps Réel</h3>
           </div>
           <span id="portTableCount" class="text-xs text-slate-400 font-semibold">0 remorques</span>
         </div>
@@ -312,17 +397,48 @@
                 <th class="py-2.5 px-3 text-right">Action</th>
               </tr>
             </thead>
-            <tbody id="portTableBody" class="divide-y divide-slate-700/60 font-medium">
-              </tbody>
+            <tbody id="portTableBody" class="divide-y divide-slate-700/60 font-medium"></tbody>
           </table>
         </div>
       </div>
-
     </div>
 
 
-    <div id="viewTriptyque" class="hidden space-y-6">
+    <!-- ==================== MODULE 2: PLANNING EXPORT ==================== -->
+    <div id="modulePlanning" class="space-y-6 hidden">
+      <div class="bg-purple-950/30 border border-purple-800/40 p-4 rounded-xl flex items-center justify-between">
+        <div>
+          <h3 class="text-sm font-bold text-purple-300 uppercase tracking-wider">Espace Attribution Remorques (Chargés Clientèle)</h3>
+          <p class="text-xs text-slate-400 mt-0.5">Réservez les remorques en priorité selon l'urgence du triptyque.</p>
+        </div>
+        <span class="bg-purple-900/80 text-purple-300 text-xs px-3 py-1 rounded-full font-bold border border-purple-700">10 Planners Connectés</span>
+      </div>
 
+      <!-- Planning Table -->
+      <div class="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-slate-900/90 text-slate-400 uppercase font-semibold border-b border-slate-700">
+              <tr>
+                <th class="py-3 px-4">Matricule</th>
+                <th class="py-3 px-4">Client / Destination</th>
+                <th class="py-3 px-4">Sortie Port</th>
+                <th class="py-3 px-4">Triptyque Restant</th>
+                <th class="py-3 px-4 text-center">Pli & Documents</th>
+                <th class="py-3 px-4 text-center">Statut Réservation</th>
+                <th class="py-3 px-4 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody id="planningTableBody" class="divide-y divide-slate-700/60 font-medium"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ==================== MODULE 3: DASHBOARD & TRIPTYQUE 360° ==================== -->
+    <div id="moduleDashboard" class="space-y-6 hidden">
+      <!-- Live KPIs -->
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl flex items-center justify-between">
           <div>
@@ -357,6 +473,7 @@
         </div>
       </div>
 
+      <!-- Filters & Search -->
       <div class="flex flex-wrap gap-3 items-center justify-between">
         <div class="relative flex-1 min-w-[240px]">
           <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-xs"></i>
@@ -373,6 +490,7 @@
         </select>
       </div>
 
+      <!-- General Dashboard Table -->
       <div class="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow">
         <div class="overflow-x-auto">
           <table class="w-full text-left text-xs text-slate-300">
@@ -383,17 +501,15 @@
                 <th class="py-3 px-4">Sortie Port</th>
                 <th class="py-3 px-4">Séjour Maroc</th>
                 <th class="py-3 px-4">Triptyque Restant</th>
-                <th class="py-3 px-4 text-center">Conformité Pli (CG / Assur / VT)</th>
-                <th class="py-3 px-4 text-center">Attribution Planning Export</th>
+                <th class="py-3 px-4 text-center">Conformité Pli (CG/Assur/VT)</th>
+                <th class="py-3 px-4 text-center">Attribution Export</th>
                 <th class="py-3 px-4 text-right">Action</th>
               </tr>
             </thead>
-            <tbody id="triptyqueTableBody" class="divide-y divide-slate-700/60 font-medium">
-              </tbody>
+            <tbody id="dashboardTableBody" class="divide-y divide-slate-700/60 font-medium"></tbody>
           </table>
         </div>
       </div>
-
     </div>
 
   </main>
@@ -402,7 +518,7 @@
     let currentUser = JSON.parse(localStorage.getItem('sjl_user') || 'null');
     let rawList = [];
     let usersList = {};
-    let activeTab = 'PORT';
+    let activeModule = 'WELCOME';
 
     const now = new Date();
     now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
@@ -426,20 +542,37 @@
       return role === 'SUPERVISOR' || role === 'ADMIN';
     }
 
-    function switchTab(tab) {
-      activeTab = tab;
-      const isPort = tab === 'PORT';
-      
-      document.getElementById('viewPort').classList.toggle('hidden', !isPort);
-      document.getElementById('viewTriptyque').classList.toggle('hidden', isPort);
+    // Navigation System
+    function showWelcomeScreen() {
+      activeModule = 'WELCOME';
+      document.getElementById('welcomeScreen').classList.remove('hidden');
+      document.getElementById('workspaceScreen').classList.add('hidden');
+    }
 
-      document.getElementById('tabPortBtn').className = isPort ? 
-        'text-sm font-bold text-blue-400 border-b-2 border-blue-500 pb-2 px-2 flex items-center gap-2 transition' :
-        'text-sm font-semibold text-slate-400 hover:text-slate-200 pb-2 px-2 flex items-center gap-2 transition';
+    function openModule(moduleName) {
+      activeModule = moduleName;
+      document.getElementById('welcomeScreen').classList.add('hidden');
+      document.getElementById('workspaceScreen').classList.remove('hidden');
 
-      document.getElementById('tabTriptyqueBtn').className = !isPort ? 
-        'text-sm font-bold text-blue-400 border-b-2 border-blue-500 pb-2 px-2 flex items-center gap-2 transition' :
-        'text-sm font-semibold text-slate-400 hover:text-slate-200 pb-2 px-2 flex items-center gap-2 transition';
+      document.getElementById('modulePort').classList.toggle('hidden', moduleName !== 'PORT');
+      document.getElementById('modulePlanning').classList.toggle('hidden', moduleName !== 'PLANNING');
+      document.getElementById('moduleDashboard').classList.toggle('hidden', moduleName !== 'DASHBOARD');
+
+      // Update Sub-nav buttons styles
+      const tabs = [
+        { id: 'tabPortBtn', name: 'PORT', color: 'bg-blue-600 text-white' },
+        { id: 'tabPlanningBtn', name: 'PLANNING', color: 'bg-purple-600 text-white' },
+        { id: 'tabDashboardBtn', name: 'DASHBOARD', color: 'bg-emerald-600 text-white' }
+      ];
+
+      tabs.forEach(t => {
+        const btn = document.getElementById(t.id);
+        if (t.name === moduleName) {
+          btn.className = `px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 ${t.color}`;
+        } else {
+          btn.className = `px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 text-slate-400 hover:text-white`;
+        }
+      });
 
       render();
     }
@@ -453,14 +586,12 @@
         document.getElementById('userBadgeName').innerText = username;
         document.getElementById('userBadgeRole').innerText = ROLE_TITLES[currentUser.role] || currentUser.role;
 
-        // Show Admin button if supervisor
         if (isSupervisor(currentUser.role)) {
           document.getElementById('adminBtn').classList.remove('hidden');
         } else {
           document.getElementById('adminBtn').classList.add('hidden');
         }
 
-        // Show Port Entry form if Port Ops or Supervisor
         if (currentUser.role === 'PORT_OPS' || isSupervisor(currentUser.role)) {
           document.getElementById('portOpsSection').classList.remove('hidden');
         } else {
@@ -652,7 +783,7 @@
         alert("Erreur: " + err.message);
       } finally {
         btn.disabled = false;
-        btn.innerHTML = `<i class="fa-solid fa-plus"></i> Ajouter cette remorque au suivi Port`;
+        btn.innerHTML = `<i class="fa-solid fa-plus"></i> Enregistrer Sortie / Arrivée Port`;
       }
     }
 
@@ -754,7 +885,7 @@
         });
       }
 
-      // 2. RENDER TRIPTYQUE & PLANNING VIEW (Only units that exited port or have dateSortie)
+      // Filtered units with port exit date for Planning & Dashboard
       const triptyqueList = rawList.filter(item => {
         const matchesSearch = item.matricule.toLowerCase().includes(search) ||
                               item.client.toLowerCase().includes(search) ||
@@ -772,16 +903,24 @@
 
       triptyqueList.sort((a, b) => a.daysRemaining - b.daysRemaining);
 
+      // KPIs
       document.getElementById('kpiTotal').innerText = triptyqueList.length;
       document.getElementById('kpiCritical').innerText = triptyqueList.filter(i => i.status === "CRITICAL").length;
       document.getElementById('kpiWarning').innerText = triptyqueList.filter(i => i.status === "WARNING").length;
       document.getElementById('kpiBooked').innerText = triptyqueList.filter(i => !!i.bookedBy).length;
 
-      const tripBody = document.getElementById('triptyqueTableBody');
-      tripBody.innerHTML = '';
+      // 2. RENDER PLANNING TABLE
+      const planBody = document.getElementById('planningTableBody');
+      planBody.innerHTML = '';
+
+      // 3. RENDER DASHBOARD TABLE
+      const dashBody = document.getElementById('dashboardTableBody');
+      dashBody.innerHTML = '';
 
       if (triptyqueList.length === 0) {
-        tripBody.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-slate-500">Aucune remorque en circulation avec sortie port enregistrée.</td></tr>`;
+        const emptyMsg = `<tr><td colspan="8" class="text-center py-8 text-slate-500">Aucune remorque trouvée.</td></tr>`;
+        planBody.innerHTML = emptyMsg;
+        dashBody.innerHTML = emptyMsg;
       } else {
         triptyqueList.forEach(row => {
           let badgeClass = "bg-emerald-900/60 text-emerald-300 border-emerald-700";
@@ -789,18 +928,16 @@
 
           if (row.status === "CRITICAL") {
             badgeClass = "bg-rose-900/70 text-rose-300 border-rose-700 font-bold animate-pulse";
-            statusText = row.daysRemaining < 0 ? `EXPIRÉ (${Math.abs(row.daysRemaining)}j)` : `URGENT: ${row.daysRemaining}j restants`;
+            statusText = row.daysRemaining < 0 ? `EXPIRÉ (${Math.abs(row.daysRemaining)}j)` : `URGENT: ${row.daysRemaining}j`;
           } else if (row.status === "WARNING") {
             badgeClass = "bg-amber-900/60 text-amber-300 border-amber-700";
           }
 
-          // Doc compliance summary (CG, Assur, VT)
           const allDocsOk = row.carteGrise === "OK" && row.assur === "OK" && row.vt === "OK";
           const docBadge = allDocsOk ? 
             `<span class="badge-ok text-[11px] px-2 py-0.5 rounded-full font-bold">✓ Pli Conforme</span>` :
             `<span class="badge-warn text-[11px] px-2 py-0.5 rounded-full font-bold">⚠ Docs Incomplets</span>`;
 
-          // Booking logic
           let bookingCol = '';
           if (row.bookedBy) {
             const isMine = activeUser === row.bookedBy || isSupervisor(currentUser.role);
@@ -809,7 +946,7 @@
                 <span class="inline-flex items-center gap-1 bg-purple-950/80 border border-purple-700 text-purple-300 px-2.5 py-1 rounded-lg text-[11px] font-bold">
                   <i class="fa-solid fa-user-lock"></i> Prise par ${row.bookedBy}
                 </span>
-                ${isMine ? `<button onclick="releaseTrailer('${row.id}', '${row.matricule}')" title="Libérer la remorque" class="text-rose-400 hover:text-rose-300 text-xs px-1 font-bold">✕</button>` : ''}
+                ${isMine ? `<button onclick="releaseTrailer('${row.id}', '${row.matricule}')" title="Libérer" class="text-rose-400 hover:text-rose-300 text-xs px-1 font-bold">✕</button>` : ''}
               </div>
             `;
           } else {
@@ -825,13 +962,27 @@
 
           const canDelete = currentUser && (currentUser.role === 'PORT_OPS' || isSupervisor(currentUser.role));
           const actionCol = canDelete ? `
-            <button onclick="deleteTrailer('${row.id}')" title="Clôturer Triptyque (Embarquée / Exportée)" class="text-slate-500 hover:text-emerald-400 p-1 transition">
+            <button onclick="deleteTrailer('${row.id}')" title="Clôturer Triptyque" class="text-slate-500 hover:text-emerald-400 p-1 transition">
               <i class="fa-solid fa-ship"></i>
             </button>
           ` : `<span class="text-slate-600 text-[10px]">-</span>`;
 
-          tripBody.innerHTML += `
-            <tr class="hover:bg-slate-700/40 transition">
+          // Append to Planning
+          planBody.innerHTML += `
+            <tr class="hover:bg-slate-700/40">
+              <td class="py-3 px-4 font-bold text-yellow-400">${row.matricule}</td>
+              <td class="py-3 px-4">${row.client}</td>
+              <td class="py-3 px-4">${row.dateSortie}</td>
+              <td class="py-3 px-4 font-bold ${row.daysRemaining <= 3 ? 'text-rose-400' : 'text-slate-100'}">${row.daysRemaining} j</td>
+              <td class="py-3 px-4 text-center">${docBadge}</td>
+              <td class="py-3 px-4 text-center">${bookingCol}</td>
+              <td class="py-3 px-4 text-right">${actionCol}</td>
+            </tr>
+          `;
+
+          // Append to Dashboard
+          dashBody.innerHTML += `
+            <tr class="hover:bg-slate-700/40">
               <td class="py-3 px-4 font-bold text-yellow-400">${row.matricule}</td>
               <td class="py-3 px-4">${row.client}</td>
               <td class="py-3 px-4">${row.dateSortie}</td>
