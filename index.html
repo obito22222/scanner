@@ -32,10 +32,11 @@
         <p class="text-xs text-slate-400">Authentification sécurisée à la plateforme</p>
       </div>
 
+      <!-- Login Form -->
       <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
         <div>
           <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Nom d'utilisateur *</label>
-          <input type="text" id="loginUsername" required placeholder="ex: zouhair / khalid / yassine" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500">
+          <input type="text" id="loginUsername" required placeholder="ex: zouhair baaziz / khalid" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500">
         </div>
 
         <div>
@@ -45,7 +46,7 @@
 
         <div id="authError" class="text-rose-400 text-xs font-semibold hidden text-center"></div>
 
-        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 rounded-lg shadow-lg text-sm transition flex items-center justify-center gap-2">
+        <button type="submit" id="loginBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 rounded-lg shadow-lg text-sm transition flex items-center justify-center gap-2">
           <span>Se connecter</span>
           <i class="fa-solid fa-arrow-right"></i>
         </button>
@@ -56,10 +57,11 @@
         </p>
       </form>
 
+      <!-- Signup Form -->
       <form id="signupForm" onsubmit="handleSignup(event)" class="space-y-4 hidden">
         <div>
           <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Nom & Prénom / Identifiant *</label>
-          <input type="text" id="signupUsername" required placeholder="ex: khalid" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500">
+          <input type="text" id="signupUsername" required placeholder="ex: zouhair baaziz" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500">
         </div>
 
         <div>
@@ -67,7 +69,7 @@
           <input type="password" id="signupPassword" required placeholder="••••••••" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500">
         </div>
 
-        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-lg shadow-lg text-sm transition flex items-center justify-center gap-2">
+        <button type="submit" id="signupBtn" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-lg shadow-lg text-sm transition flex items-center justify-center gap-2">
           <span>Créer mon compte</span>
         </button>
 
@@ -530,6 +532,17 @@
     let usersList = {};
     let activeModule = 'WELCOME';
 
+    // Helper to sanitize Firebase keys and handle spaces in usernames
+    function sanitizeKey(str) {
+      return encodeURIComponent(str.trim().toLowerCase().replace(/\s+/g, '_').replace(/[\.\#\$\[\]\/]/g, ''));
+    }
+
+    function toggleAuthMode(isSignup) {
+      document.getElementById('loginForm').classList.toggle('hidden', isSignup);
+      document.getElementById('signupForm').classList.toggle('hidden', !isSignup);
+      document.getElementById('authError').classList.add('hidden');
+    }
+
     const ROLE_TITLES = {
       'SUPERVISOR': 'Superviseur / Direction',
       'ADMIN': 'Superviseur / Direction',
@@ -638,51 +651,92 @@
 
     async function handleSignup(e) {
       e.preventDefault();
-      const username = document.getElementById('signupUsername').value.trim().toLowerCase();
+      const rawUser = document.getElementById('signupUsername').value.trim();
       const password = document.getElementById('signupPassword').value.trim();
+      const cleanUser = sanitizeKey(rawUser);
 
-      const res = await fetch(`${DB_URL}/users/${username}.json`);
-      const existing = await res.json();
-
-      if (existing) {
-        alert("Cet identifiant existe déjà.");
+      if (!cleanUser || !password) {
+        alert("Veuillez remplir tous les champs.");
         return;
       }
 
-      const initialRole = (username.includes('zouhair') || username === 'admin') ? 'SUPERVISOR' : 'OPERATOR';
-      const userData = { username, password, role: initialRole, createdAt: new Date().toISOString() };
-      
-      await fetch(`${DB_URL}/users/${username}.json`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(userData)
-      });
+      const btn = document.getElementById('signupBtn');
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Création...`;
 
-      currentUser = userData;
-      localStorage.setItem('sjl_user', JSON.stringify(currentUser));
-      checkAuth();
-      loadData();
+      try {
+        const res = await fetch(`${DB_URL}/users/${cleanUser}.json`);
+        const existing = await res.json();
+
+        if (existing) {
+          alert("Cet identifiant existe déjà. Veuillez vous connecter.");
+          toggleAuthMode(false);
+          return;
+        }
+
+        const initialRole = (cleanUser.includes('zouhair') || cleanUser === 'admin') ? 'SUPERVISOR' : 'OPERATOR';
+        const userData = { 
+          username: rawUser, 
+          userKey: cleanUser,
+          password: password, 
+          role: initialRole, 
+          createdAt: new Date().toISOString() 
+        };
+        
+        await fetch(`${DB_URL}/users/${cleanUser}.json`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(userData)
+        });
+
+        currentUser = userData;
+        localStorage.setItem('sjl_user', JSON.stringify(currentUser));
+        checkAuth();
+        loadData();
+      } catch (err) {
+        alert("Erreur de connexion à la base: " + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<span>Créer mon compte</span>`;
+      }
     }
 
     async function handleLogin(e) {
       e.preventDefault();
-      const username = document.getElementById('loginUsername').value.trim().toLowerCase();
+      const rawUser = document.getElementById('loginUsername').value.trim();
       const password = document.getElementById('loginPassword').value.trim();
+      const cleanUser = sanitizeKey(rawUser);
       const errorDiv = document.getElementById('authError');
 
-      const res = await fetch(`${DB_URL}/users/${username}.json`);
-      const user = await res.json();
-
-      if (!user || user.password !== password) {
-        errorDiv.innerText = "Identifiant ou mot de passe incorrect.";
-        errorDiv.classList.remove('hidden');
-        return;
+      const btn = document.getElementById('loginBtn');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Connexion...`;
       }
 
-      currentUser = user;
-      localStorage.setItem('sjl_user', JSON.stringify(currentUser));
-      checkAuth();
-      loadData();
+      try {
+        const res = await fetch(`${DB_URL}/users/${cleanUser}.json`);
+        const user = await res.json();
+
+        if (!user || user.password !== password) {
+          errorDiv.innerText = "Identifiant ou mot de passe incorrect.";
+          errorDiv.classList.remove('hidden');
+          return;
+        }
+
+        currentUser = user;
+        localStorage.setItem('sjl_user', JSON.stringify(currentUser));
+        checkAuth();
+        loadData();
+      } catch (err) {
+        errorDiv.innerText = "Erreur réseau: " + err.message;
+        errorDiv.classList.remove('hidden');
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = `<span>Se connecter</span> <i class="fa-solid fa-arrow-right"></i>`;
+        }
+      }
     }
 
     function logout() {
@@ -696,8 +750,8 @@
 
       try {
         if (currentUser) {
-          const u = (currentUser.username || currentUser.name || "").toLowerCase();
-          const userRes = await fetch(`${DB_URL}/users/${u}.json`);
+          const userKey = currentUser.userKey || sanitizeKey(currentUser.username || currentUser.name || "");
+          const userRes = await fetch(`${DB_URL}/users/${userKey}.json`);
           const fresh = await userRes.json();
           if (fresh) {
             currentUser = fresh;
@@ -804,14 +858,12 @@
 
       try {
         if (editId) {
-          // Update existing trailer
           await fetch(`${DB_URL}/trailers/${editId}.json`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
           });
         } else {
-          // Create new trailer
           payload.bookedBy = null;
           await fetch(`${DB_URL}/trailers.json`, {
             method: "POST",
@@ -888,7 +940,7 @@
       const filter = document.getElementById('filterStatus').value;
       const activeUser = currentUser ? (currentUser.username || currentUser.name) : '';
 
-      // 1. RENDER PORT VIEW
+      // 1. PORT VIEW
       document.getElementById('portTableCount').innerText = `${rawList.length} remorques`;
       const portBody = document.getElementById('portTableBody');
       portBody.innerHTML = '';
@@ -933,7 +985,7 @@
         });
       }
 
-      // Filtered units with port exit date for Planning & Dashboard
+      // 2. TRIPTYQUE FILTERED LIST
       const triptyqueList = rawList.filter(item => {
         const matchesSearch = item.matricule.toLowerCase().includes(search) ||
                               item.client.toLowerCase().includes(search) ||
@@ -951,7 +1003,6 @@
 
       triptyqueList.sort((a, b) => a.daysRemaining - b.daysRemaining);
 
-      // KPIs
       document.getElementById('kpiTotal').innerText = triptyqueList.length;
       document.getElementById('kpiCritical').innerText = triptyqueList.filter(i => i.status === "CRITICAL").length;
       document.getElementById('kpiWarning').innerText = triptyqueList.filter(i => i.status === "WARNING").length;
@@ -1055,18 +1106,19 @@
       const tbody = document.getElementById('usersTableBody');
       tbody.innerHTML = '';
 
-      Object.keys(usersList).forEach(username => {
-        const u = usersList[username];
+      Object.keys(usersList).forEach(userKey => {
+        const u = usersList[userKey];
         const isOperator = u.role === 'OPERATOR';
+        const displayUsername = u.username || userKey;
         tbody.innerHTML += `
           <tr class="hover:bg-slate-700/40">
             <td class="py-3 px-3 font-bold text-white capitalize flex items-center gap-2">
-              <span>${u.username}</span>
+              <span>${displayUsername}</span>
               ${isOperator ? '<span class="bg-amber-900/80 text-amber-300 text-[10px] px-1.5 py-0.5 rounded border border-amber-600">Nouveau</span>' : ''}
             </td>
             <td class="py-3 px-3 text-amber-400 font-semibold">${ROLE_TITLES[u.role] || u.role}</td>
             <td class="py-3 px-3 text-right">
-              <select onchange="updateUserRole('${u.username}', this.value)" class="bg-slate-900 border border-slate-600 rounded px-2 py-1 text-xs text-white">
+              <select onchange="updateUserRole('${userKey}', this.value)" class="bg-slate-900 border border-slate-600 rounded px-2 py-1 text-xs text-white">
                 <option value="OPERATOR" ${u.role === 'OPERATOR' ? 'selected' : ''}>Opérateur (Lecture)</option>
                 <option value="CHARGE_CLIENT" ${u.role === 'CHARGE_CLIENT' ? 'selected' : ''}>Chargé de Clientèle</option>
                 <option value="PORT_OPS" ${u.role === 'PORT_OPS' ? 'selected' : ''}>Port Tanger Med</option>
@@ -1078,12 +1130,12 @@
       });
     }
 
-    async function updateUserRole(targetUsername, newRole) {
-      await fetch(`${DB_URL}/users/${targetUsername}/role.json`, {
+    async function updateUserRole(targetKey, newRole) {
+      await fetch(`${DB_URL}/users/${targetKey}/role.json`, {
         method: "PUT",
         body: JSON.stringify(newRole)
       });
-      alert(`Rôle de ${targetUsername} mis à jour vers: ${ROLE_TITLES[newRole]}`);
+      alert(`Rôle mis à jour vers: ${ROLE_TITLES[newRole]}`);
       loadUsersList();
       loadData();
     }
