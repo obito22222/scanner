@@ -96,19 +96,16 @@
     </div>
     
     <div class="flex items-center space-x-3">
-      <!-- Back to Welcome Screen Button -->
       <button onclick="showWelcomeScreen()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold px-3 py-2 rounded-lg transition flex items-center gap-1.5 shadow">
         <i class="fa-solid fa-house"></i> Accueil
       </button>
 
-      <!-- Supervisor Admin Button -->
       <button id="adminBtn" onclick="toggleAdminModal()" class="hidden bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold px-3 py-2 rounded-lg transition flex items-center gap-2 shadow">
         <i class="fa-solid fa-users-gear"></i>
         <span>Gérer Rôles</span>
         <span id="pendingBadge" class="hidden bg-rose-500 text-white font-bold text-[10px] px-1.5 py-0.2 rounded-full">0</span>
       </button>
 
-      <!-- User Badge -->
       <div class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs flex items-center gap-2">
         <i class="fa-solid fa-user-shield text-blue-400"></i>
         <div>
@@ -152,7 +149,145 @@
     </div>
   </div>
 
-  <!-- ==================== 4. WELCOME SCREEN / 3 PORTAL BUTTONS ==================== -->
+  <!-- ==================== 4. MODAL DE SAISIE KHALID & PORT (HIDDEN POPUP FORM) ==================== -->
+  <div id="portEntryModal" class="fixed inset-0 bg-slate-950/90 z-40 hidden flex items-center justify-center p-4 backdrop-blur-sm overflow-y-auto">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 max-w-4xl w-full shadow-2xl space-y-4 my-8">
+      <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-ship text-blue-400 text-lg"></i>
+          <h2 class="text-base font-bold text-white uppercase tracking-wider">Formulaire de Saisie Port Tanger Med</h2>
+        </div>
+        <button onclick="togglePortEntryModal()" class="text-slate-400 hover:text-white text-lg font-bold">✕</button>
+      </div>
+
+      <form id="entryForm" onsubmit="addFullTrailer(event)" class="space-y-4">
+        <!-- Row 1: Identification & Transit -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">Matricule Remorque *</label>
+            <input type="text" id="inputMatricule" required placeholder="ex: R 4221 BCP" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-yellow-300 font-bold uppercase focus:outline-none focus:border-blue-500">
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">Client *</label>
+            <input type="text" id="inputClient" required placeholder="ex: RENAULT / LEONI" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">Transitaire</label>
+            <input type="text" id="inputTransitaire" placeholder="ex: SJL / TTAM" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">Date Arrivée Port *</label>
+            <input type="datetime-local" id="inputDateArrivee" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+          </div>
+        </div>
+
+        <!-- Row 2: Dédouanement & Traction -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">État Dédouanement</label>
+            <select id="inputEtatDedouanement" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+              <option value="Bien Dédouanée">Bien Dédouanée</option>
+              <option value="En cours de dédouanement">En cours de dédouanement</option>
+              <option value="VISITE">VISITE</option>
+              <option value="SCANNER">SCANNER</option>
+              <option value="TAXATION OK">TAXATION OK</option>
+              <option value="MANQUE TAXATION">MANQUE TAXATION</option>
+              <option value="TAXATION REJETÉ">TAXATION REJETÉ</option>
+              <option value="PESAGE">PESAGE</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">Chauffeur / Traction</label>
+            <input type="text" id="inputChauffeur" placeholder="Nom chauffeur ou BESOIN TRACTEUR" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">Date de Sortie Port</label>
+            <input type="date" id="inputDateSortie" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">Scellées (Plombs)</label>
+            <input type="text" id="inputScellees" placeholder="ex: 1390543 - 1390544" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+          </div>
+        </div>
+
+        <!-- Row 3: Documents Compliance -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 bg-slate-900/60 p-3 rounded-lg border border-slate-700/60">
+          <div>
+            <label class="block text-[10px] font-semibold text-slate-400 mb-1 uppercase">BAD</label>
+            <select id="inputBAD" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-slate-200">
+              <option value="OK">BAD OK</option>
+              <option value="NON">En attente</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-semibold text-slate-400 mb-1 uppercase">Pli</label>
+            <select id="inputPli" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-slate-200">
+              <option value="OK">OK</option>
+              <option value="BOITE">BOÎTE</option>
+              <option value="SANS">SANS</option>
+              <option value="A_CONFIRMER">À confirmer</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-semibold text-slate-400 mb-1 uppercase">EUR 1</label>
+            <select id="inputEUR1" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-slate-200">
+              <option value="OK">EUR1 OK</option>
+              <option value="SANS">SANS</option>
+              <option value="FACTURE_OK">FACTURE OK</option>
+              <option value="A_CONFIRMER">À confirmer</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-semibold text-slate-400 mb-1 uppercase">Carte Grise</label>
+            <select id="inputCarteGrise" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-slate-200">
+              <option value="OK">OK</option>
+              <option value="SANS">SANS</option>
+              <option value="A_CONFIRMER">À confirmer</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-semibold text-slate-400 mb-1 uppercase">Assurance</label>
+            <select id="inputAssur" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-slate-200">
+              <option value="OK">OK</option>
+              <option value="SANS">SANS</option>
+              <option value="A_CONFIRMER">À confirmer</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-semibold text-slate-400 mb-1 uppercase">Visite Tech (VT)</label>
+            <select id="inputVT" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-slate-200">
+              <option value="OK">OK</option>
+              <option value="SANS">SANS</option>
+              <option value="A_CONFIRMER">À confirmer</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-2">
+          <button type="button" onclick="togglePortEntryModal()" class="bg-slate-700 hover:bg-slate-600 text-slate-300 font-semibold px-4 py-2 rounded-lg text-sm transition">
+            Annuler
+          </button>
+          <button type="submit" id="submitBtn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-6 py-2 rounded-lg text-sm transition shadow flex items-center gap-2">
+            <i class="fa-solid fa-plus"></i>
+            <span>Enregistrer dans la base</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== 5. WELCOME SCREEN / 3 PORTAL BUTTONS ==================== -->
   <div id="welcomeScreen" class="flex-1 flex flex-col justify-center items-center p-6 max-w-6xl mx-auto w-full space-y-8 animate-fade-in">
     <div class="text-center space-y-2">
       <h2 class="text-3xl font-extrabold text-white tracking-wide">Bienvenue sur le Portail SJL Opérations</h2>
@@ -171,12 +306,12 @@
           <div>
             <h3 class="text-lg font-bold text-white group-hover:text-blue-400 transition">1. Saisie Port Tanger Med</h3>
             <p class="text-xs text-slate-400 mt-1 leading-relaxed">
-              Espace dédié à Khalid et l'équipe Port pour saisir les arrivées, l'état de dédouanement, les scellées et les dates de sortie.
+              Espace dédié à Khalid et l'équipe Port pour enregistrer les arrivées, l'état de dédouanement et les sorties de port.
             </p>
           </div>
         </div>
         <div class="mt-6 pt-4 border-t border-slate-700/60 flex items-center justify-between text-xs font-semibold text-blue-400">
-          <span>Ouvrir la saisie port</span>
+          <span>Ouvrir l'espace port</span>
           <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition"></i>
         </div>
       </div>
@@ -190,7 +325,7 @@
           <div>
             <h3 class="text-lg font-bold text-white group-hover:text-purple-400 transition">2. Planning & Attribution Export</h3>
             <p class="text-xs text-slate-400 mt-1 leading-relaxed">
-              Espace dédié aux 10 chargés de clientèle pour consulter les remorques disponibles et réserver une remorque sans risque de doublon.
+              Espace dédié aux chargés de clientèle pour consulter les remorques disponibles et réserver une unité sans doublon.
             </p>
           </div>
         </div>
@@ -200,7 +335,7 @@
         </div>
       </div>
 
-      <!-- Card 3: Full Dashboard & Analytics -->
+      <!-- Card 3: Dashboard -->
       <div onclick="openModule('DASHBOARD')" class="bg-slate-800 border border-slate-700 hover:border-emerald-500 rounded-2xl p-6 shadow-xl cursor-pointer transform hover:-translate-y-1.5 transition-all group flex flex-col justify-between">
         <div class="space-y-4">
           <div class="w-12 h-12 bg-emerald-600/20 group-hover:bg-emerald-600 text-emerald-400 group-hover:text-white rounded-xl flex items-center justify-center text-2xl transition">
@@ -209,7 +344,7 @@
           <div>
             <h3 class="text-lg font-bold text-white group-hover:text-emerald-400 transition">3. Dashboard Triptyque 360°</h3>
             <p class="text-xs text-slate-400 mt-1 leading-relaxed">
-              Vue d'ensemble sur le compte à rebours 30 jours, conformité des plis (Carte Grise / Assurance / VT) et alertes critiques.
+              Vue globale sur le compte à rebours 30 jours, conformité des plis et alertes critiques.
             </p>
           </div>
         </div>
@@ -222,13 +357,13 @@
     </div>
   </div>
 
-  <!-- ==================== 5. WORKSPACE CONTAINER (MAIN APP) ==================== -->
+  <!-- ==================== 6. WORKSPACE CONTAINER (MAIN APP) ==================== -->
   <main id="workspaceScreen" class="hidden flex-1 p-4 sm:p-6 max-w-7xl w-full mx-auto space-y-6">
 
-    <!-- Sub-Navbar Tabs inside Workspace -->
+    <!-- Sub-Navbar Tabs -->
     <div class="bg-slate-800 border border-slate-700 rounded-xl p-2 flex flex-wrap gap-2">
       <button id="tabPortBtn" onclick="openModule('PORT')" class="px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 text-slate-400 hover:text-white">
-        <i class="fa-solid fa-ship"></i> 1. Saisie Port Tanger Med
+        <i class="fa-solid fa-ship"></i> 1. Suivi Port Tanger Med
       </button>
       <button id="tabPlanningBtn" onclick="openModule('PLANNING')" class="px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 text-slate-400 hover:text-white">
         <i class="fa-solid fa-hand-pointer"></i> 2. Planning Export
@@ -238,133 +373,22 @@
       </button>
     </div>
 
-    <!-- ==================== MODULE 1: PORT SAISIE ==================== -->
+    <!-- ==================== MODULE 1: PORT VIEW ==================== -->
     <div id="modulePort" class="space-y-6 hidden">
-      <!-- Saisie Form -->
-      <div id="portOpsSection" class="bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-lg">
-        <div class="flex items-center gap-2 mb-3">
-          <i class="fa-solid fa-circle-plus text-blue-400"></i>
-          <h2 class="text-sm font-bold text-white uppercase tracking-wider">Saisie Complète Flux Port (Exploitation Tanger Med)</h2>
+      <!-- Clean Top Action Bar with Saisie Trigger Button -->
+      <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl flex flex-wrap items-center justify-between gap-4 shadow">
+        <div>
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider">Suivi Journalier Flux Port Tanger Med</h3>
+          <p class="text-xs text-slate-400 mt-0.5">Consultez l'état d'avancement des dédouanements et des sorties de port.</p>
         </div>
 
-        <form id="entryForm" onsubmit="addFullTrailer(event)" class="space-y-4">
-          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-            <div>
-              <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">Matricule Remorque *</label>
-              <input type="text" id="inputMatricule" required placeholder="ex: R 4221 BCP" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-yellow-300 font-bold uppercase focus:outline-none focus:border-blue-500">
-            </div>
-
-            <div>
-              <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">Client *</label>
-              <input type="text" id="inputClient" required placeholder="ex: RENAULT / LEONI" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
-            </div>
-
-            <div>
-              <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">Transitaire</label>
-              <input type="text" id="inputTransitaire" placeholder="ex: SJL / TTAM" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
-            </div>
-
-            <div>
-              <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">Date Arrivée Port *</label>
-              <input type="datetime-local" id="inputDateArrivee" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-            <div>
-              <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">État Dédouanement</label>
-              <select id="inputEtatDedouanement" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
-                <option value="Bien Dédouanée">Bien Dédouanée</option>
-                <option value="En cours de dédouanement">En cours de dédouanement</option>
-                <option value="VISITE">VISITE</option>
-                <option value="SCANNER">SCANNER</option>
-                <option value="TAXATION OK">TAXATION OK</option>
-                <option value="MANQUE TAXATION">MANQUE TAXATION</option>
-                <option value="TAXATION REJETÉ">TAXATION REJETÉ</option>
-                <option value="PESAGE">PESAGE</option>
-              </select>
-            </div>
-
-            <div>
-              <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">Chauffeur / Traction</label>
-              <input type="text" id="inputChauffeur" placeholder="Nom chauffeur ou BESOIN TRACTEUR" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
-            </div>
-
-            <div>
-              <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">Date de Sortie Port</label>
-              <input type="date" id="inputDateSortie" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
-            </div>
-
-            <div>
-              <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">Scellées (Plombs)</label>
-              <input type="text" id="inputScellees" placeholder="ex: 1390543 - 1390544" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
-            </div>
-          </div>
-
-          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 bg-slate-900/60 p-3 rounded-lg border border-slate-700/60">
-            <div>
-              <label class="block text-[10px] font-semibold text-slate-400 mb-1 uppercase">BAD</label>
-              <select id="inputBAD" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-slate-200">
-                <option value="OK">BAD OK</option>
-                <option value="NON">En attente</option>
-              </select>
-            </div>
-
-            <div>
-              <label class="block text-[10px] font-semibold text-slate-400 mb-1 uppercase">Pli</label>
-              <select id="inputPli" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-slate-200">
-                <option value="OK">OK</option>
-                <option value="BOITE">BOÎTE</option>
-                <option value="SANS">SANS</option>
-                <option value="A_CONFIRMER">À confirmer</option>
-              </select>
-            </div>
-
-            <div>
-              <label class="block text-[10px] font-semibold text-slate-400 mb-1 uppercase">EUR 1</label>
-              <select id="inputEUR1" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-slate-200">
-                <option value="OK">EUR1 OK</option>
-                <option value="SANS">SANS</option>
-                <option value="FACTURE_OK">FACTURE OK</option>
-                <option value="A_CONFIRMER">À confirmer</option>
-              </select>
-            </div>
-
-            <div>
-              <label class="block text-[10px] font-semibold text-slate-400 mb-1 uppercase">Carte Grise</label>
-              <select id="inputCarteGrise" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-slate-200">
-                <option value="OK">OK</option>
-                <option value="SANS">SANS</option>
-                <option value="A_CONFIRMER">À confirmer</option>
-              </select>
-            </div>
-
-            <div>
-              <label class="block text-[10px] font-semibold text-slate-400 mb-1 uppercase">Assurance</label>
-              <select id="inputAssur" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-slate-200">
-                <option value="OK">OK</option>
-                <option value="SANS">SANS</option>
-                <option value="A_CONFIRMER">À confirmer</option>
-              </select>
-            </div>
-
-            <div>
-              <label class="block text-[10px] font-semibold text-slate-400 mb-1 uppercase">Visite Tech (VT)</label>
-              <select id="inputVT" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-slate-200">
-                <option value="OK">OK</option>
-                <option value="SANS">SANS</option>
-                <option value="A_CONFIRMER">À confirmer</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="flex justify-end">
-            <button type="submit" id="submitBtn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-6 py-2.5 rounded-lg text-sm transition shadow flex items-center gap-2">
-              <i class="fa-solid fa-plus"></i>
-              <span>Enregistrer Sortie / Arrivée Port</span>
-            </button>
-          </div>
-        </form>
+        <!-- Saisie Trigger Button (Only visible to Port Ops & Supervisor) -->
+        <div id="portAddBtnContainer" class="hidden">
+          <button onclick="togglePortEntryModal()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-2.5 rounded-lg text-xs transition shadow flex items-center gap-2">
+            <i class="fa-solid fa-circle-plus text-sm"></i>
+            <span>+ Saisir une Remorque (Sortie / Arrivée Port)</span>
+          </button>
+        </div>
       </div>
 
       <!-- Port Operations Table -->
@@ -372,7 +396,7 @@
         <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-900/60">
           <div class="flex items-center gap-2">
             <i class="fa-solid fa-table-list text-blue-400"></i>
-            <h3 class="text-sm font-bold text-white uppercase tracking-wider">Situation Port Tanger Med en Temps Réel</h3>
+            <h3 class="text-sm font-bold text-white uppercase tracking-wider">Situation Port en Temps Réel</h3>
           </div>
           <span id="portTableCount" class="text-xs text-slate-400 font-semibold">0 remorques</span>
         </div>
@@ -414,7 +438,6 @@
         <span class="bg-purple-900/80 text-purple-300 text-xs px-3 py-1 rounded-full font-bold border border-purple-700">10 Planners Connectés</span>
       </div>
 
-      <!-- Planning Table -->
       <div class="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow">
         <div class="overflow-x-auto">
           <table class="w-full text-left text-xs text-slate-300">
@@ -490,7 +513,7 @@
         </select>
       </div>
 
-      <!-- General Dashboard Table -->
+      <!-- Dashboard Table -->
       <div class="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow">
         <div class="overflow-x-auto">
           <table class="w-full text-left text-xs text-slate-300">
@@ -542,6 +565,11 @@
       return role === 'SUPERVISOR' || role === 'ADMIN';
     }
 
+    function togglePortEntryModal() {
+      const modal = document.getElementById('portEntryModal');
+      modal.classList.toggle('hidden');
+    }
+
     // Navigation System
     function showWelcomeScreen() {
       activeModule = 'WELCOME';
@@ -558,7 +586,6 @@
       document.getElementById('modulePlanning').classList.toggle('hidden', moduleName !== 'PLANNING');
       document.getElementById('moduleDashboard').classList.toggle('hidden', moduleName !== 'DASHBOARD');
 
-      // Update Sub-nav buttons styles
       const tabs = [
         { id: 'tabPortBtn', name: 'PORT', color: 'bg-blue-600 text-white' },
         { id: 'tabPlanningBtn', name: 'PLANNING', color: 'bg-purple-600 text-white' },
@@ -592,11 +619,9 @@
           document.getElementById('adminBtn').classList.add('hidden');
         }
 
-        if (currentUser.role === 'PORT_OPS' || isSupervisor(currentUser.role)) {
-          document.getElementById('portOpsSection').classList.remove('hidden');
-        } else {
-          document.getElementById('portOpsSection').classList.add('hidden');
-        }
+        // Show/Hide Saisie Add Button for Port Ops & Supervisor
+        const canAddPort = currentUser.role === 'PORT_OPS' || isSupervisor(currentUser.role);
+        document.getElementById('portAddBtnContainer').classList.toggle('hidden', !canAddPort);
       }
     }
 
@@ -714,7 +739,6 @@
           });
         }
 
-        // Supervisor Pending Users Badge
         if (currentUser && isSupervisor(currentUser.role)) {
           const usersRes = await fetch(`${DB_URL}/users.json`);
           usersList = await usersRes.json() || {};
@@ -778,12 +802,14 @@
         document.getElementById('inputChauffeur').value = '';
         document.getElementById('inputScellees').value = '';
         document.getElementById('inputDateSortie').value = '';
+        
+        togglePortEntryModal();
         await loadData();
       } catch (err) {
         alert("Erreur: " + err.message);
       } finally {
         btn.disabled = false;
-        btn.innerHTML = `<i class="fa-solid fa-plus"></i> Enregistrer Sortie / Arrivée Port`;
+        btn.innerHTML = `<i class="fa-solid fa-plus"></i> <span>Enregistrer dans la base</span>`;
       }
     }
 
@@ -967,7 +993,6 @@
             </button>
           ` : `<span class="text-slate-600 text-[10px]">-</span>`;
 
-          // Append to Planning
           planBody.innerHTML += `
             <tr class="hover:bg-slate-700/40">
               <td class="py-3 px-4 font-bold text-yellow-400">${row.matricule}</td>
@@ -980,7 +1005,6 @@
             </tr>
           `;
 
-          // Append to Dashboard
           dashBody.innerHTML += `
             <tr class="hover:bg-slate-700/40">
               <td class="py-3 px-4 font-bold text-yellow-400">${row.matricule}</td>
@@ -997,7 +1021,6 @@
       }
     }
 
-    // Supervisor User Role Manager Modal
     async function toggleAdminModal() {
       const modal = document.getElementById('adminModal');
       modal.classList.toggle('hidden');
