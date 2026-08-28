@@ -109,7 +109,64 @@
         </div>
         <button onclick="toggleAdminModal()" class="text-slate-400 hover:text-white text-lg font-bold">✕</button>
       </div>
+<!-- ==================== MODULE DRIVER (CHAUFFEUR INTERFACE) ==================== -->
+  <div id="moduleDriver" class="space-y-6 hidden max-w-lg mx-auto">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-2xl space-y-6 text-center">
+      <div class="space-y-2">
+        <div class="inline-flex bg-blue-600/20 text-blue-400 p-4 rounded-2xl">
+          <i class="fa-solid fa-truck-fast text-3xl"></i>
+        </div>
+        <h2 class="text-xl font-bold text-white">Déclaration Matériel Chauffeur</h2>
+        <p class="text-xs text-slate-400">Saisissez les équipements trouvés sur la remorque</p>
+      </div>
 
+      <form id="driverForm" onsubmit="submitDriverEquipment(event)" class="space-y-4 text-left">
+        <div>
+          <label class="block text-xs font-bold text-slate-300 uppercase mb-1.5">1. Matricule de la Remorque *</label>
+          <input type="text" id="driverMatricule" required placeholder="ex: R 4221 BCP" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-base text-yellow-300 font-bold uppercase focus:outline-none focus:border-blue-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-300 uppercase mb-1.5">2. Type de Matériel *</label>
+          <div class="grid grid-cols-3 gap-2">
+            <button type="button" onclick="setEquipType('BARRES')" id="btnTypeBarres" class="equip-btn bg-blue-600 text-white font-bold py-3 px-2 rounded-xl text-xs border border-blue-500 transition shadow">
+              <i class="fa-solid fa-bars block text-lg mb-1"></i> Barres
+            </button>
+            <button type="button" onclick="setEquipType('SANGLES')" id="btnTypeSangles" class="equip-btn bg-slate-900 text-slate-400 font-bold py-3 px-2 rounded-xl text-xs border border-slate-700 transition">
+              <i class="fa-solid fa-ribbon block text-lg mb-1"></i> Sangles
+            </button>
+            <button type="button" onclick="setEquipType('CANTONERAS')" id="btnTypeCantoneras" class="equip-btn bg-slate-900 text-slate-400 font-bold py-3 px-2 rounded-xl text-xs border border-slate-700 transition">
+              <i class="fa-solid fa-square block text-lg mb-1"></i> Cantoneras
+            </button>
+          </div>
+          <input type="hidden" id="driverEquipType" value="BARRES">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-300 uppercase mb-1.5">3. Nombre Trouvé *</label>
+          <input type="number" id="driverCount" required min="0" max="200" value="4" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-xl text-center text-white font-bold focus:outline-none focus:border-blue-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-300 uppercase mb-1.5">4. Sens / Direction *</label>
+          <div class="grid grid-cols-2 gap-3">
+            <button type="button" onclick="setSens('IMPORT')" id="btnSensImport" class="sens-btn bg-emerald-600 text-white font-bold py-3 px-3 rounded-xl text-xs border border-emerald-500 transition shadow">
+              <i class="fa-solid fa-ship block text-base mb-1"></i> Import (Arrivée Port)
+            </button>
+            <button type="button" onclick="setSens('EXPORT')" id="btnSensExport" class="sens-btn bg-slate-900 text-slate-400 font-bold py-3 px-3 rounded-xl text-xs border border-slate-700 transition">
+              <i class="fa-solid fa-plane-departure block text-base mb-1"></i> Export (Vers Espagne)
+            </button>
+          </div>
+          <input type="hidden" id="driverSens" value="IMPORT">
+        </div>
+
+        <button type="submit" id="driverSubmitBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-extrabold py-3.5 rounded-xl shadow-lg text-sm transition flex items-center justify-center gap-2 mt-4">
+          <i class="fa-solid fa-circle-check text-lg"></i>
+          <span>Valider et Enregistrer</span>
+        </button>
+      </form>
+    </div>
+  </div>
       <!-- Supervisor Direct Account Creation Form -->
       <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700 space-y-3">
         <h3 class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
