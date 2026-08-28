@@ -30,7 +30,7 @@
       <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
         <div>
           <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Identifiant / Nom d'utilisateur *</label>
-          <input type="text" id="loginUsername" required placeholder="ex: zouhair / khalid / yassine" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500">
+          <input type="text" id="loginUsername" required placeholder="ex: zouhair / khalid / chauffeur_1" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500">
         </div>
 
         <div>
@@ -48,7 +48,7 @@
         <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-700 text-center">
           <p class="text-[11px] text-slate-400">
             <i class="fa-solid fa-lock text-amber-400 mr-1"></i>
-            Accès sécurisé. Contactez l'administrateur système pour obtenir vos identifiants de connexion.
+            Accès sécurisé. Contactez l'administrateur système pour obtenir vos identifiants.
           </p>
         </div>
       </form>
@@ -109,21 +109,21 @@
         </div>
         <button onclick="toggleAdminModal()" class="text-slate-400 hover:text-white text-lg font-bold">✕</button>
       </div>
-  
+
       <!-- Supervisor Direct Account Creation Form -->
       <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700 space-y-3">
         <h3 class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
           <i class="fa-solid fa-user-plus"></i> Créer un nouveau compte collaborateur
         </h3>
         <form id="adminCreateUserForm" onsubmit="adminCreateUser(event)" class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          <input type="text" id="newUsername" required placeholder="Identifiant (ex: khalid)" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500">
+          <input type="text" id="newUsername" required placeholder="Identifiant (ex: chauffeur_1)" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500">
           <input type="password" id="newPassword" required placeholder="Mot de passe" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500">
           <select id="newRole" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500">
+            <option value="DRIVER">Chauffeur (Interface Simple)</option>
             <option value="CHARGE_CLIENT">Chargé de Clientèle</option>
             <option value="PORT_OPS">Port Tanger Med (Saisie)</option>
             <option value="OPERATOR">Opérateur (Lecture)</option>
             <option value="SUPERVISOR">Superviseur / Direction</option>
-            <option value="DRIVER">Chauffeur (Interface Simple)</option>
           </select>
           <div class="sm:col-span-3 flex justify-end pt-1">
             <button type="submit" id="adminCreateBtn" class="bg-purple-600 hover:bg-purple-500 text-white font-bold px-4 py-2 rounded-lg text-xs transition shadow flex items-center gap-1.5">
@@ -366,64 +366,66 @@
       </button>
     </div>
 
-    <!-- MODULE 1: PORT VIEW -->
-     <div id="moduleDriver" class="space-y-6 hidden max-w-lg mx-auto">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-2xl space-y-6 text-center">
-      <div class="space-y-2">
-        <div class="inline-flex bg-blue-600/20 text-blue-400 p-4 rounded-2xl">
-          <i class="fa-solid fa-truck-fast text-3xl"></i>
+    <!-- MODULE DRIVER (CHAUFFEUR INTERFACE) -->
+    <div id="moduleDriver" class="space-y-6 hidden max-w-lg mx-auto">
+      <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-2xl space-y-6 text-center">
+        <div class="space-y-2">
+          <div class="inline-flex bg-blue-600/20 text-blue-400 p-4 rounded-2xl">
+            <i class="fa-solid fa-truck-fast text-3xl"></i>
+          </div>
+          <h2 class="text-xl font-bold text-white">Déclaration Matériel Chauffeur</h2>
+          <p class="text-xs text-slate-400">Saisissez les équipements trouvés sur la remorque</p>
         </div>
-        <h2 class="text-xl font-bold text-white">Déclaration Matériel Chauffeur</h2>
-        <p class="text-xs text-slate-400">Saisissez les équipements trouvés sur la remorque</p>
+
+        <form id="driverForm" onsubmit="submitDriverEquipment(event)" class="space-y-4 text-left">
+          <div>
+            <label class="block text-xs font-bold text-slate-300 uppercase mb-1.5">1. Matricule de la Remorque *</label>
+            <input type="text" id="driverMatricule" required placeholder="ex: R 4221 BCP" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-base text-yellow-300 font-bold uppercase focus:outline-none focus:border-blue-500">
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-300 uppercase mb-1.5">2. Type de Matériel *</label>
+            <div class="grid grid-cols-3 gap-2">
+              <button type="button" onclick="setEquipType('BARRES')" id="btnTypeBarres" class="equip-btn bg-blue-600 text-white font-bold py-3 px-2 rounded-xl text-xs border border-blue-500 transition shadow">
+                <i class="fa-solid fa-bars block text-lg mb-1"></i> Barres
+              </button>
+              <button type="button" onclick="setEquipType('SANGLES')" id="btnTypeSangles" class="equip-btn bg-slate-900 text-slate-400 font-bold py-3 px-2 rounded-xl text-xs border border-slate-700 transition">
+                <i class="fa-solid fa-ribbon block text-lg mb-1"></i> Sangles
+              </button>
+              <button type="button" onclick="setEquipType('CANTONERAS')" id="btnTypeCantoneras" class="equip-btn bg-slate-900 text-slate-400 font-bold py-3 px-2 rounded-xl text-xs border border-slate-700 transition">
+                <i class="fa-solid fa-square block text-lg mb-1"></i> Cantoneras
+              </button>
+            </div>
+            <input type="hidden" id="driverEquipType" value="BARRES">
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-300 uppercase mb-1.5">3. Nombre Trouvé *</label>
+            <input type="number" id="driverCount" required min="0" max="200" value="4" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-xl text-center text-white font-bold focus:outline-none focus:border-blue-500">
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-300 uppercase mb-1.5">4. Sens / Direction *</label>
+            <div class="grid grid-cols-2 gap-3">
+              <button type="button" onclick="setSens('IMPORT')" id="btnSensImport" class="sens-btn bg-emerald-600 text-white font-bold py-3 px-3 rounded-xl text-xs border border-emerald-500 transition shadow">
+                <i class="fa-solid fa-ship block text-base mb-1"></i> Import (Arrivée Port)
+              </button>
+              <button type="button" onclick="setSens('EXPORT')" id="btnSensExport" class="sens-btn bg-slate-900 text-slate-400 font-bold py-3 px-3 rounded-xl text-xs border border-slate-700 transition">
+                <i class="fa-solid fa-plane-departure block text-base mb-1"></i> Export (Vers Espagne)
+              </button>
+            </div>
+            <input type="hidden" id="driverSens" value="IMPORT">
+          </div>
+
+          <button type="submit" id="driverSubmitBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-extrabold py-3.5 rounded-xl shadow-lg text-sm transition flex items-center justify-center gap-2 mt-4">
+            <i class="fa-solid fa-circle-check text-lg"></i>
+            <span>Valider et Enregistrer</span>
+          </button>
+        </form>
       </div>
-
-      <form id="driverForm" onsubmit="submitDriverEquipment(event)" class="space-y-4 text-left">
-        <div>
-          <label class="block text-xs font-bold text-slate-300 uppercase mb-1.5">1. Matricule de la Remorque *</label>
-          <input type="text" id="driverMatricule" required placeholder="ex: R 4221 BCP" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-base text-yellow-300 font-bold uppercase focus:outline-none focus:border-blue-500">
-        </div>
-
-        <div>
-          <label class="block text-xs font-bold text-slate-300 uppercase mb-1.5">2. Type de Matériel *</label>
-          <div class="grid grid-cols-3 gap-2">
-            <button type="button" onclick="setEquipType('BARRES')" id="btnTypeBarres" class="equip-btn bg-blue-600 text-white font-bold py-3 px-2 rounded-xl text-xs border border-blue-500 transition shadow">
-              <i class="fa-solid fa-bars block text-lg mb-1"></i> Barres
-            </button>
-            <button type="button" onclick="setEquipType('SANGLES')" id="btnTypeSangles" class="equip-btn bg-slate-900 text-slate-400 font-bold py-3 px-2 rounded-xl text-xs border border-slate-700 transition">
-              <i class="fa-solid fa-ribbon block text-lg mb-1"></i> Sangles
-            </button>
-            <button type="button" onclick="setEquipType('CANTONERAS')" id="btnTypeCantoneras" class="equip-btn bg-slate-900 text-slate-400 font-bold py-3 px-2 rounded-xl text-xs border border-slate-700 transition">
-              <i class="fa-solid fa-square block text-lg mb-1"></i> Cantoneras
-            </button>
-          </div>
-          <input type="hidden" id="driverEquipType" value="BARRES">
-        </div>
-
-        <div>
-          <label class="block text-xs font-bold text-slate-300 uppercase mb-1.5">3. Nombre Trouvé *</label>
-          <input type="number" id="driverCount" required min="0" max="200" value="4" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-xl text-center text-white font-bold focus:outline-none focus:border-blue-500">
-        </div>
-
-        <div>
-          <label class="block text-xs font-bold text-slate-300 uppercase mb-1.5">4. Sens / Direction *</label>
-          <div class="grid grid-cols-2 gap-3">
-            <button type="button" onclick="setSens('IMPORT')" id="btnSensImport" class="sens-btn bg-emerald-600 text-white font-bold py-3 px-3 rounded-xl text-xs border border-emerald-500 transition shadow">
-              <i class="fa-solid fa-ship block text-base mb-1"></i> Import (Arrivée Port)
-            </button>
-            <button type="button" onclick="setSens('EXPORT')" id="btnSensExport" class="sens-btn bg-slate-900 text-slate-400 font-bold py-3 px-3 rounded-xl text-xs border border-slate-700 transition">
-              <i class="fa-solid fa-plane-departure block text-base mb-1"></i> Export (Vers Espagne)
-            </button>
-          </div>
-          <input type="hidden" id="driverSens" value="IMPORT">
-        </div>
-
-        <button type="submit" id="driverSubmitBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-extrabold py-3.5 rounded-xl shadow-lg text-sm transition flex items-center justify-center gap-2 mt-4">
-          <i class="fa-solid fa-circle-check text-lg"></i>
-          <span>Valider et Enregistrer</span>
-        </button>
-      </form>
     </div>
-  </div>
+
+    <!-- MODULE 1: PORT VIEW -->
     <div id="modulePort" class="space-y-6 hidden">
       <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl flex flex-wrap items-center justify-between gap-4 shadow">
         <div>

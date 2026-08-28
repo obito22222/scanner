@@ -16,6 +16,7 @@ const ROLE_TITLES = {
   'ADMIN': 'Superviseur / Direction',
   'PORT_OPS': 'Port Tanger Med (Saisie)',
   'CHARGE_CLIENT': 'Chargé de Clientèle',
+  'DRIVER': 'Chauffeur / Terrain',
   'OPERATOR': 'Opérateur (Lecture Seule)'
 };
 
@@ -78,6 +79,7 @@ function openModule(moduleName) {
   document.getElementById('modulePort').classList.toggle('hidden', moduleName !== 'PORT');
   document.getElementById('modulePlanning').classList.toggle('hidden', moduleName !== 'PLANNING');
   document.getElementById('moduleDashboard').classList.toggle('hidden', moduleName !== 'DASHBOARD');
+  document.getElementById('moduleDriver').classList.add('hidden'); // hidden unless driver role
 
   const tabs = [
     { id: 'tabPortBtn', name: 'PORT', color: 'bg-blue-600 text-white' },
@@ -114,6 +116,18 @@ function checkAuth() {
 
     const canAddPort = currentUser.role === 'PORT_OPS' || isSupervisor(currentUser.role);
     document.getElementById('portAddBtnContainer').classList.toggle('hidden', !canAddPort);
+
+    // If user is a driver, redirect directly to the simplified interface
+    if (currentUser.role === 'DRIVER') {
+      document.getElementById('welcomeScreen').classList.add('hidden');
+      document.getElementById('workspaceScreen').classList.remove('hidden');
+      document.getElementById('modulePort').classList.add('hidden');
+      document.getElementById('modulePlanning').classList.add('hidden');
+      document.getElementById('moduleDashboard').classList.add('hidden');
+      document.getElementById('moduleDriver').classList.remove('hidden');
+      const topNavTabs = document.querySelector('#workspaceScreen > div:first-child');
+      if (topNavTabs) topNavTabs.classList.add('hidden');
+    }
   }
 }
 
@@ -161,7 +175,76 @@ function logout() {
   checkAuth();
 }
 
-// Supervisor direct account creation handler
+// Driver Form State Helpers
+let selectedEquipType = 'BARRES';
+let selectedSens = 'IMPORT';
+
+function setEquipType(type) {
+  selectedEquipType = type;
+  document.getElementById('driverEquipType').value = type;
+  
+  ['Barres', 'Sangles', 'Cantoneras'].forEach(t => {
+    const btn = document.getElementById(`btnType${t}`);
+    const isSelected = t.toUpperCase() === type;
+    btn.className = isSelected ? 
+      "equip-btn bg-blue-600 text-white font-bold py-3 px-2 rounded-xl text-xs border border-blue-500 transition shadow" :
+      "equip-btn bg-slate-900 text-slate-400 font-bold py-3 px-2 rounded-xl text-xs border border-slate-700 transition";
+  });
+}
+
+function setSens(sens) {
+  selectedSens = sens;
+  document.getElementById('driverSens').value = sens;
+
+  ['Import', 'Export'].forEach(s => {
+    const btn = document.getElementById(`btnSens${s}`);
+    const isSelected = s.toUpperCase() === sens;
+    btn.className = isSelected ? 
+      "sens-btn bg-emerald-600 text-white font-bold py-3 px-3 rounded-xl text-xs border border-emerald-500 transition shadow" :
+      "sens-btn bg-slate-900 text-slate-400 font-bold py-3 px-3 rounded-xl text-xs border border-slate-700 transition";
+  });
+}
+
+async function submitDriverEquipment(e) {
+  e.preventDefault();
+  const btn = document.getElementById('driverSubmitBtn');
+  btn.disabled = true;
+  btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Enregistrement...`;
+
+  const matricule = document.getElementById('driverMatricule').value.trim().toUpperCase();
+  const count = parseInt(document.getElementById('driverCount').value) || 0;
+  const driverName = currentUser.username || currentUser.name;
+
+  const payload = {
+    matricule: matricule,
+    equipType: selectedEquipType,
+    count: count,
+    sens: selectedSens,
+    driver: driverName,
+    timestamp: new Date().toISOString()
+  };
+
+  try {
+    await fetch(`${DB_URL}/equipment_logs.json`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    alert(`✅ Enregistré avec succès !\nRemorque: ${matricule}\n${selectedEquipType}: ${count} (${selectedSens})`);
+    document.getElementById('driverForm').reset();
+    document.getElementById('driverCount').value = "4";
+    setEquipType('BARRES');
+    setSens('IMPORT');
+  } catch (err) {
+    alert("Erreur d'enregistrement: " + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = `<i class="fa-solid fa-circle-check text-lg"></i> <span>Valider et Enregistrer</span>`;
+  }
+}
+
+// Supervisor account creation handler
 async function adminCreateUser(e) {
   e.preventDefault();
   if (!currentUser || !isSupervisor(currentUser.role)) {
@@ -535,10 +618,10 @@ function render() {
 
       const canDelete = currentUser && (currentUser.role === 'PORT_OPS' || isSupervisor(currentUser.role));
       const actionCol = canDelete ? `
-            <button onclick="deleteTrailer('${row.id}')" title="Clôturer Triptyque" class="text-slate-500 hover:text-emerald-400 p-1 transition">
-              <i class="fa-solid fa-ship"></i>
-            </button>
-          ` : `<span class="text-slate-600 text-[10px]">-</span>`;
+        <button onclick="deleteTrailer('${row.id}')" title="Clôturer Triptyque" class="text-slate-500 hover:text-emerald-400 p-1 transition">
+          <i class="fa-solid fa-ship"></i>
+        </button>
+      ` : `<span class="text-slate-600 text-[10px]">-</span>`;
 
       planBody.innerHTML += `
         <tr class="hover:bg-slate-700/40">
@@ -594,6 +677,7 @@ async function loadUsersList() {
         <td class="py-3 px-3 text-amber-400 font-semibold">${ROLE_TITLES[u.role] || u.role}</td>
         <td class="py-3 px-3 text-right flex items-center justify-end gap-2">
           <select onchange="updateUserRole('${userKey}', this.value)" class="bg-slate-900 border border-slate-600 rounded px-2 py-1 text-xs text-white">
+            <option value="DRIVER" ${u.role === 'DRIVER' ? 'selected' : ''}>Chauffeur</option>
             <option value="OPERATOR" ${u.role === 'OPERATOR' ? 'selected' : ''}>Opérateur (Lecture)</option>
             <option value="CHARGE_CLIENT" ${u.role === 'CHARGE_CLIENT' ? 'selected' : ''}>Chargé de Clientèle</option>
             <option value="PORT_OPS" ${u.role === 'PORT_OPS' ? 'selected' : ''}>Port Tanger Med</option>
