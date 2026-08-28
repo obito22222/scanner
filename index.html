@@ -15,7 +15,7 @@
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans">
 
-  <!-- ==================== 1. AUTHENTICATION MODAL ==================== -->
+  <!-- ==================== 1. AUTHENTICATION (LOGIN ONLY) ==================== -->
   <div id="authScreen" class="fixed inset-0 bg-slate-950/95 z-50 flex items-center justify-center p-4 backdrop-blur-md">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-6">
       <div class="text-center space-y-2">
@@ -23,14 +23,14 @@
           <i class="fa-solid fa-ship text-2xl text-white"></i>
         </div>
         <h2 class="text-xl font-bold text-white tracking-wide">SJL Live Fleet & Port Hub</h2>
-        <p class="text-xs text-slate-400">Authentification sécurisée à la plateforme</p>
+        <p class="text-xs text-slate-400">Authentification restreinte aux collaborateurs autorisés</p>
       </div>
 
       <!-- Login Form -->
       <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
         <div>
-          <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Nom d'utilisateur *</label>
-          <input type="text" id="loginUsername" required placeholder="ex: zouhair baaziz / khalid" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500">
+          <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Identifiant / Nom d'utilisateur *</label>
+          <input type="text" id="loginUsername" required placeholder="ex: zouhair / khalid / yassine" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500">
         </div>
 
         <div>
@@ -45,31 +45,12 @@
           <i class="fa-solid fa-arrow-right"></i>
         </button>
 
-        <p class="text-center text-xs text-slate-400 pt-2">
-          Pas encore de compte ? 
-          <button type="button" onclick="toggleAuthMode(true)" class="text-blue-400 font-bold hover:underline">Créer un compte</button>
-        </p>
-      </form>
-
-      <!-- Signup Form -->
-      <form id="signupForm" onsubmit="handleSignup(event)" class="space-y-4 hidden">
-        <div>
-          <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Nom & Prénom / Identifiant *</label>
-          <input type="text" id="signupUsername" required placeholder="ex: zouhair baaziz" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500">
+        <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-700 text-center">
+          <p class="text-[11px] text-slate-400">
+            <i class="fa-solid fa-lock text-amber-400 mr-1"></i>
+            Accès sécurisé. Contactez l'administrateur système pour obtenir vos identifiants de connexion.
+          </p>
         </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Mot de passe *</label>
-          <input type="password" id="signupPassword" required placeholder="••••••••" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500">
-        </div>
-
-        <button type="submit" id="signupBtn" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-lg shadow-lg text-sm transition flex items-center justify-center gap-2">
-          <span>Créer mon compte</span>
-        </button>
-
-        <p class="text-center text-xs text-slate-400 pt-2">
-          <button type="button" onclick="toggleAuthMode(false)" class="text-blue-400 font-bold hover:underline">Retour à la connexion</button>
-        </p>
       </form>
     </div>
   </div>
@@ -98,8 +79,7 @@
 
       <button id="adminBtn" onclick="toggleAdminModal()" class="hidden bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold px-3 py-2 rounded-lg transition flex items-center gap-2 shadow">
         <i class="fa-solid fa-users-gear"></i>
-        <span>Gérer Rôles</span>
-        <span id="pendingBadge" class="hidden bg-rose-500 text-white font-bold text-[10px] px-1.5 py-0.2 rounded-full">0</span>
+        <span>Gérer Utilisateurs</span>
       </button>
 
       <div class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs flex items-center gap-2">
@@ -120,23 +100,47 @@
   </header>
 
   <!-- ==================== 3. SUPERVISOR USER MANAGEMENT MODAL ==================== -->
-  <div id="adminModal" class="fixed inset-0 bg-slate-950/90 z-40 hidden flex items-center justify-center p-4 backdrop-blur-sm">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 max-w-2xl w-full shadow-2xl space-y-4">
+  <div id="adminModal" class="fixed inset-0 bg-slate-950/90 z-40 hidden flex items-center justify-center p-4 backdrop-blur-sm overflow-y-auto">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 max-w-2xl w-full shadow-2xl space-y-5 my-8">
       <div class="flex justify-between items-center border-b border-slate-700 pb-3">
         <div class="flex items-center gap-2">
           <i class="fa-solid fa-users-gear text-purple-400 text-lg"></i>
-          <h2 class="text-base font-bold text-white">Gestion des Rôles & Accès (Superviseur)</h2>
+          <h2 class="text-base font-bold text-white">Gestion des Comptes & Rôles (Superviseur)</h2>
         </div>
         <button onclick="toggleAdminModal()" class="text-slate-400 hover:text-white text-lg font-bold">✕</button>
       </div>
 
-      <div class="overflow-y-auto max-h-80">
+      <!-- Supervisor Direct Account Creation Form -->
+      <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700 space-y-3">
+        <h3 class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+          <i class="fa-solid fa-user-plus"></i> Créer un nouveau compte collaborateur
+        </h3>
+        <form id="adminCreateUserForm" onsubmit="adminCreateUser(event)" class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <input type="text" id="newUsername" required placeholder="Identifiant (ex: khalid)" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500">
+          <input type="password" id="newPassword" required placeholder="Mot de passe" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500">
+          <select id="newRole" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500">
+            <option value="CHARGE_CLIENT">Chargé de Clientèle</option>
+            <option value="PORT_OPS">Port Tanger Med (Saisie)</option>
+            <option value="OPERATOR">Opérateur (Lecture)</option>
+            <option value="SUPERVISOR">Superviseur / Direction</option>
+          </select>
+          <div class="sm:col-span-3 flex justify-end pt-1">
+            <button type="submit" id="adminCreateBtn" class="bg-purple-600 hover:bg-purple-500 text-white font-bold px-4 py-2 rounded-lg text-xs transition shadow flex items-center gap-1.5">
+              <i class="fa-solid fa-check"></i>
+              <span>Créer le compte</span>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Existing Users List Table -->
+      <div class="overflow-y-auto max-h-60 border border-slate-700 rounded-xl">
         <table class="w-full text-left text-xs text-slate-300">
           <thead class="bg-slate-900 text-slate-400 uppercase font-semibold">
             <tr>
               <th class="py-2.5 px-3">Utilisateur</th>
               <th class="py-2.5 px-3">Rôle Actuel</th>
-              <th class="py-2.5 px-3 text-right">Modifier Rôle</th>
+              <th class="py-2.5 px-3 text-right">Modifier / Supprimer</th>
             </tr>
           </thead>
           <tbody id="usersTableBody" class="divide-y divide-slate-700"></tbody>
@@ -159,7 +163,6 @@
       <form id="entryForm" onsubmit="saveTrailer(event)" class="space-y-4">
         <input type="hidden" id="editTrailerId">
 
-        <!-- Row 1 -->
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
           <div>
             <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">Matricule Remorque *</label>
@@ -182,7 +185,6 @@
           </div>
         </div>
 
-        <!-- Row 2 -->
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
           <div>
             <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">État Dédouanement</label>
@@ -214,7 +216,6 @@
           </div>
         </div>
 
-        <!-- Row 3: Documents -->
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 bg-slate-900/60 p-3 rounded-lg border border-slate-700/60">
           <div>
             <label class="block text-[10px] font-semibold text-slate-400 mb-1 uppercase">BAD</label>

@@ -6,15 +6,9 @@ let rawList = [];
 let usersList = {};
 let activeModule = 'WELCOME';
 
-// Helper to sanitize Firebase keys and handle spaces in usernames
+// Helper to sanitize Firebase keys
 function sanitizeKey(str) {
   return encodeURIComponent(str.trim().toLowerCase().replace(/\s+/g, '_').replace(/[\.\#\$\[\]\/]/g, ''));
-}
-
-function toggleAuthMode(isSignup) {
-  document.getElementById('loginForm').classList.toggle('hidden', isSignup);
-  document.getElementById('signupForm').classList.toggle('hidden', !isSignup);
-  document.getElementById('authError').classList.add('hidden');
 }
 
 const ROLE_TITLES = {
@@ -123,58 +117,6 @@ function checkAuth() {
   }
 }
 
-async function handleSignup(e) {
-  e.preventDefault();
-  const rawUser = document.getElementById('signupUsername').value.trim();
-  const password = document.getElementById('signupPassword').value.trim();
-  const cleanUser = sanitizeKey(rawUser);
-
-  if (!cleanUser || !password) {
-    alert("Veuillez remplir tous les champs.");
-    return;
-  }
-
-  const btn = document.getElementById('signupBtn');
-  btn.disabled = true;
-  btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Création...`;
-
-  try {
-    const res = await fetch(`${DB_URL}/users/${cleanUser}.json`);
-    const existing = await res.json();
-
-    if (existing) {
-      alert("Cet identifiant existe déjà. Veuillez vous connecter.");
-      toggleAuthMode(false);
-      return;
-    }
-
-    const initialRole = (cleanUser.includes('zouhair') || cleanUser === 'admin') ? 'SUPERVISOR' : 'OPERATOR';
-    const userData = { 
-      username: rawUser, 
-      userKey: cleanUser,
-      password: password, 
-      role: initialRole, 
-      createdAt: new Date().toISOString() 
-    };
-    
-    await fetch(`${DB_URL}/users/${cleanUser}.json`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(userData)
-    });
-
-    currentUser = userData;
-    localStorage.setItem('sjl_user', JSON.stringify(currentUser));
-    checkAuth();
-    loadData();
-  } catch (err) {
-    alert("Erreur de connexion à la base: " + err.message);
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = `<span>Créer mon compte</span>`;
-  }
-}
-
 async function handleLogin(e) {
   e.preventDefault();
   const rawUser = document.getElementById('loginUsername').value.trim();
@@ -219,6 +161,73 @@ function logout() {
   checkAuth();
 }
 
+// Supervisor direct account creation handler
+async function adminCreateUser(e) {
+  e.preventDefault();
+  if (!currentUser || !isSupervisor(currentUser.role)) {
+    alert("Action réservée au Superviseur.");
+    return;
+  }
+
+  const rawUser = document.getElementById('newUsername').value.trim();
+  const password = document.getElementById('newPassword').value.trim();
+  const role = document.getElementById('newRole').value;
+  const cleanUser = sanitizeKey(rawUser);
+
+  if (!cleanUser || !password) {
+    alert("Veuillez remplir tous les champs.");
+    return;
+  }
+
+  const btn = document.getElementById('adminCreateBtn');
+  btn.disabled = true;
+  btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Création...`;
+
+  try {
+    const res = await fetch(`${DB_URL}/users/${cleanUser}.json`);
+    const existing = await res.json();
+
+    if (existing) {
+      alert("Cet identifiant existe déjà.");
+      return;
+    }
+
+    const userData = {
+      username: rawUser,
+      userKey: cleanUser,
+      password: password,
+      role: role,
+      createdAt: new Date().toISOString()
+    };
+
+    await fetch(`${DB_URL}/users/${cleanUser}.json`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(userData)
+    });
+
+    alert(`Compte '${rawUser}' créé avec succès en tant que: ${ROLE_TITLES[role]}`);
+    document.getElementById('adminCreateUserForm').reset();
+    loadUsersList();
+  } catch (err) {
+    alert("Erreur lors de la création: " + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = `<i class="fa-solid fa-check"></i> <span>Créer le compte</span>`;
+  }
+}
+
+async function deleteUser(userKey) {
+  if (!confirm(`Êtes-vous sûr de vouloir supprimer définitivement le compte '${userKey}' ?`)) return;
+
+  try {
+    await fetch(`${DB_URL}/users/${userKey}.json`, { method: "DELETE" });
+    loadUsersList();
+  } catch (err) {
+    alert("Erreur de suppression: " + err.message);
+  }
+}
+
 async function loadData() {
   if (!DB_URL || DB_URL.includes("YOUR-PROJECT-NAME")) return;
 
@@ -247,7 +256,6 @@ async function loadData() {
 
         if (item.dateSortie) {
           hasExited = true;
-          
           const exitDate = new Date(item.dateSortie);
           exitDate.setHours(0, 0, 0, 0);
           
@@ -285,19 +293,6 @@ async function loadData() {
           hasExited: hasExited
         });
       });
-    }
-
-    if (currentUser && isSupervisor(currentUser.role)) {
-      const usersRes = await fetch(`${DB_URL}/users.json`);
-      usersList = await usersRes.json() || {};
-      const pendingCount = Object.values(usersList).filter(u => u.role === 'OPERATOR').length;
-      const badge = document.getElementById('pendingBadge');
-      if (pendingCount > 0) {
-        badge.innerText = `${pendingCount} new`;
-        badge.classList.remove('hidden');
-      } else {
-        badge.classList.add('hidden');
-      }
     }
 
     render();
@@ -540,10 +535,10 @@ function render() {
 
       const canDelete = currentUser && (currentUser.role === 'PORT_OPS' || isSupervisor(currentUser.role));
       const actionCol = canDelete ? `
-        <button onclick="deleteTrailer('${row.id}')" title="Clôturer Triptyque" class="text-slate-500 hover:text-emerald-400 p-1 transition">
-          <i class="fa-solid fa-ship"></i>
-        </button>
-      ` : `<span class="text-slate-600 text-[10px]">-</span>`;
+            <button onclick="deleteTrailer('${row.id}')" title="Clôturer Triptyque" class="text-slate-500 hover:text-emerald-400 p-1 transition">
+              <i class="fa-solid fa-ship"></i>
+            </button>
+          ` : `<span class="text-slate-600 text-[10px]">-</span>`;
 
       planBody.innerHTML += `
         <tr class="hover:bg-slate-700/40">
@@ -590,22 +585,23 @@ async function loadUsersList() {
 
   Object.keys(usersList).forEach(userKey => {
     const u = usersList[userKey];
-    const isOperator = u.role === 'OPERATOR';
     const displayUsername = u.username || userKey;
     tbody.innerHTML += `
       <tr class="hover:bg-slate-700/40">
-        <td class="py-3 px-3 font-bold text-white capitalize flex items-center gap-2">
-          <span>${displayUsername}</span>
-          ${isOperator ? '<span class="bg-amber-900/80 text-amber-300 text-[10px] px-1.5 py-0.5 rounded border border-amber-600">Nouveau</span>' : ''}
+        <td class="py-3 px-3 font-bold text-white capitalize">
+          ${displayUsername}
         </td>
         <td class="py-3 px-3 text-amber-400 font-semibold">${ROLE_TITLES[u.role] || u.role}</td>
-        <td class="py-3 px-3 text-right">
+        <td class="py-3 px-3 text-right flex items-center justify-end gap-2">
           <select onchange="updateUserRole('${userKey}', this.value)" class="bg-slate-900 border border-slate-600 rounded px-2 py-1 text-xs text-white">
             <option value="OPERATOR" ${u.role === 'OPERATOR' ? 'selected' : ''}>Opérateur (Lecture)</option>
             <option value="CHARGE_CLIENT" ${u.role === 'CHARGE_CLIENT' ? 'selected' : ''}>Chargé de Clientèle</option>
             <option value="PORT_OPS" ${u.role === 'PORT_OPS' ? 'selected' : ''}>Port Tanger Med</option>
             <option value="SUPERVISOR" ${isSupervisor(u.role) ? 'selected' : ''}>Superviseur</option>
           </select>
+          <button onclick="deleteUser('${userKey}')" title="Supprimer utilisateur" class="text-slate-500 hover:text-rose-400 p-1 transition">
+            <i class="fa-solid fa-trash"></i>
+          </button>
         </td>
       </tr>
     `;
