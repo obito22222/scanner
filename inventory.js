@@ -12,6 +12,7 @@ let currentStock = {
 let movementsList = [];
 let lastShiftData = null;
 
+// ==================== PARK SELECTOR ====================
 function switchPark(park) {
   currentPark = park;
   document.getElementById('ledgerParkTitle').innerText = `PARC ${park}`;
@@ -30,6 +31,7 @@ function switchPark(park) {
   loadParkData();
 }
 
+// ==================== MODAL CONTROLS ====================
 function openTransactionModal(type) {
   const modal = document.getElementById('transactionModal');
   const title = document.getElementById('transModalTitle');
@@ -73,16 +75,10 @@ function closeShiftModal() {
   document.getElementById('shiftModal').classList.add('hidden');
 }
 
+// ==================== DATA FETCHING & DYNAMIC BALANCING ====================
 async function loadParkData() {
   try {
-    const stockRes = await fetch(`${DB_URL}/inventory/${currentPark}/stock.json`);
-    const stockData = await stockRes.json();
-    if (stockData) {
-      currentStock = stockData;
-    } else {
-      currentStock = { barres_ok: 0, barres_nok: 0, cinchas_ok: 0, cinchas_nok: 0, cantoneras_ok: 0, cantoneras_nok: 0 };
-    }
-
+    // 1. Fetch movements ledger
     const movRes = await fetch(`${DB_URL}/inventory/${currentPark}/movements.json`);
     const movData = await movRes.json();
     movementsList = [];
@@ -92,14 +88,58 @@ async function loadParkData() {
       });
     }
 
+    // 2. Fetch last shift baseline
     const shiftRes = await fetch(`${DB_URL}/inventory/${currentPark}/last_shift.json`);
     lastShiftData = await shiftRes.json();
 
-    updateKPIDisplay();
+    // 3. Dynamically compute live stock balance
+    recalculateLiveStock();
     renderMovementsTable();
   } catch (err) {
     console.error("Error loading inventory:", err);
   }
+}
+
+function recalculateLiveStock() {
+  // Baseline starts from the last shift count or zero
+  let totals = {
+    barres_ok: lastShiftData ? (parseInt(lastShiftData.barresOk) || 0) : 0,
+    barres_nok: 0,
+    cinchas_ok: lastShiftData ? (parseInt(lastShiftData.cinchasOk) || 0) : 0,
+    cinchas_nok: 0,
+    cantoneras_ok: lastShiftData ? (parseInt(lastShiftData.cantonerasOk) || 0) : 0,
+    cantoneras_nok: 0
+  };
+
+  // Replay all logged transactions (+ for ENTRÉE, - for SORTIE)
+  movementsList.forEach(item => {
+    const factor = item.type === 'ENTREE' ? 1 : -1;
+    totals.barres_ok += (parseInt(item.barresOk) || 0) * factor;
+    totals.barres_nok += (parseInt(item.barresNok) || 0) * factor;
+    totals.cinchas_ok += (parseInt(item.cinchasOk) || 0) * factor;
+    totals.cinchas_nok += (parseInt(item.cinchasNok) || 0) * factor;
+    totals.cantoneras_ok += (parseInt(item.cantonerasOk) || 0) * factor;
+    totals.cantoneras_nok += (parseInt(item.cantonerasNok) || 0) * factor;
+  });
+
+  // Guard against negative balances
+  currentStock = {
+    barres_ok: Math.max(0, totals.barres_ok),
+    barres_nok: Math.max(0, totals.barres_nok),
+    cinchas_ok: Math.max(0, totals.cinchas_ok),
+    cinchas_nok: Math.max(0, totals.cinchas_nok),
+    cantoneras_ok: Math.max(0, totals.cantoneras_ok),
+    cantoneras_nok: Math.max(0, totals.cantoneras_nok)
+  };
+
+  // Sync state to Firebase in background
+  fetch(`${DB_URL}/inventory/${currentPark}/stock.json`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(currentStock)
+  });
+
+  updateKPIDisplay();
 }
 
 function updateKPIDisplay() {
@@ -121,61 +161,45 @@ function updateKPIDisplay() {
   }
 }
 
+// ==================== TRANSACTION ACTIONS ====================
 async function saveTransaction(e) {
   e.preventDefault();
   const btn = document.getElementById('btnSaveTrans');
   btn.disabled = true;
   btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Enregistrement...`;
 
-  const type = document.getElementById('transType').value;
-  const bOk = parseInt(document.getElementById('countBarresOk').value) || 0;
-  const bNok = parseInt(document.getElementById('countBarresNok').value) || 0;
-  const cOk = parseInt(document.getElementById('countCinchasOk').value) || 0;
-  const cNok = parseInt(document.getElementById('countCinchasNok').value) || 0;
-  const cantOk = parseInt(document.getElementById('countCantonerasOk').value) || 0;
-  const cantNok = parseInt(document.getElementById('countCantonerasNok').value) || 0;
-
   const payload = {
     date: document.getElementById('transDate').value,
     heure: document.getElementById('transTime').value,
-    type: type,
+    type: document.getElementById('transType').value,
     matricule: document.getElementById('transMatricule').value.trim().toUpperCase(),
     chauffeur: document.getElementById('transChauffeur').value.trim().toUpperCase(),
-    barresOk: bOk,
-    barresNok: bNok,
-    cinchasOk: cOk,
-    cinchasNok: cNok,
-    cantonerasOk: cantOk,
-    cantonerasNok: cantNok,
+    barresOk: parseInt(document.getElementById('countBarresOk').value) || 0,
+    barresNok: parseInt(document.getElementById('countBarresNok').value) || 0,
+    cinchasOk: parseInt(document.getElementById('countCinchasOk').value) || 0,
+    cinchasNok: parseInt(document.getElementById('countCinchasNok').value) || 0,
+    cantonerasOk: parseInt(document.getElementById('countCantonerasOk').value) || 0,
+    cantonerasNok: parseInt(document.getElementById('countCantonerasNok').value) || 0,
     comment: document.getElementById('transComment').value.trim() || "-",
     timestamp: new Date().toISOString()
   };
 
   try {
-    await fetch(`${DB_URL}/inventory/${currentPark}/movements.json`, {
+    const res = await fetch(`${DB_URL}/inventory/${currentPark}/movements.json`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
+    const data = await res.json();
 
-    const factor = type === 'ENTREE' ? 1 : -1;
-    currentStock.barres_ok = Math.max(0, (currentStock.barres_ok || 0) + (bOk * factor));
-    currentStock.barres_nok = Math.max(0, (currentStock.barres_nok || 0) + (bNok * factor));
-    currentStock.cinchas_ok = Math.max(0, (currentStock.cinchas_ok || 0) + (cOk * factor));
-    currentStock.cinchas_nok = Math.max(0, (currentStock.cinchas_nok || 0) + (cNok * factor));
-    currentStock.cantoneras_ok = Math.max(0, (currentStock.cantoneras_ok || 0) + (cantOk * factor));
-    currentStock.cantoneras_nok = Math.max(0, (currentStock.cantoneras_nok || 0) + (cantNok * factor));
+    payload.id = data.name;
+    movementsList.push(payload);
 
-    await fetch(`${DB_URL}/inventory/${currentPark}/stock.json`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(currentStock)
-    });
-
+    recalculateLiveStock();
+    renderMovementsTable();
     closeTransactionModal();
-    await loadParkData();
   } catch (err) {
-    alert("Erreur: " + err.message);
+    alert("Erreur lors de l'enregistrement: " + err.message);
   } finally {
     btn.disabled = false;
     btn.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> <span>Valider et Enregistrer</span>`;
@@ -216,22 +240,12 @@ async function saveShiftHandover(e) {
       body: JSON.stringify(shiftData)
     });
 
-    // Directly align OK stock balances
-    currentStock.barres_ok = bOk;
-    currentStock.cinchas_ok = cOk;
-    currentStock.cantoneras_ok = cantOk;
-
-    await fetch(`${DB_URL}/inventory/${currentPark}/stock.json`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(currentStock)
-    });
-
+    lastShiftData = shiftData;
+    recalculateLiveStock();
     closeShiftModal();
-    alert("Passation enregistrée avec succès !");
-    await loadParkData();
+    alert("Passation de shift enregistrée avec succès !");
   } catch (err) {
-    alert("Erreur: " + err.message);
+    alert("Erreur lors de la passation: " + err.message);
   } finally {
     btn.disabled = false;
     btn.innerHTML = `<i class="fa-solid fa-check-double"></i> <span>Valider la Passation</span>`;
@@ -239,15 +253,21 @@ async function saveShiftHandover(e) {
 }
 
 async function deleteMovement(id) {
-  if (!confirm("Voulez-vous supprimer ce mouvement ?")) return;
+  if (!confirm("Voulez-vous supprimer ce mouvement ? Le stock sera automatiquement recalculé.")) return;
   try {
-    await fetch(`${DB_URL}/inventory/${currentPark}/movements/${id}.json`, { method: "DELETE" });
-    await loadParkData();
+    await fetch(`${DB_URL}/inventory/${currentPark}/movements/${id}.json`, { 
+      method: "DELETE" 
+    });
+
+    movementsList = movementsList.filter(m => m.id !== id);
+    recalculateLiveStock();
+    renderMovementsTable();
   } catch (err) {
     alert("Erreur: " + err.message);
   }
 }
 
+// ==================== RENDERING & EXPORT ====================
 function renderMovementsTable() {
   const tbody = document.getElementById('movementsTableBody');
   const search = (document.getElementById('filterSearch').value || '').toLowerCase();
@@ -296,7 +316,7 @@ function renderMovementsTable() {
         <td class="py-2.5 px-2 text-center">${cantonerasDisplay}</td>
         <td class="py-2.5 px-3 text-slate-300 italic text-[11px]">${row.comment}</td>
         <td class="py-2.5 px-3 text-right">
-          <button onclick="deleteMovement('${row.id}')" class="text-slate-500 hover:text-rose-400 p-1">
+          <button onclick="deleteMovement('${row.id}')" class="text-slate-500 hover:text-rose-400 p-1" title="Supprimer">
             <i class="fa-solid fa-trash-can"></i>
           </button>
         </td>
@@ -333,5 +353,6 @@ function exportInventoryExcel() {
   XLSX.writeFile(wb, `SJL_${currentPark}_Equipment_${new Date().toISOString().split('T')[0]}.xlsx`);
 }
 
+// Initial boot
 loadParkData();
 setInterval(loadParkData, 10000);
