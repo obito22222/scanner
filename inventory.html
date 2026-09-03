@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SJL Hub | Suivi Fourniture & Stock Parcs</title>
+
+  <!-- External Libraries -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans">
+
+  <!-- TOP NAVBAR -->
+  <header class="bg-slate-800 border-b border-slate-700 px-6 py-3.5 flex flex-wrap justify-between items-center gap-4">
+    <div class="flex items-center space-x-3">
+      <div class="bg-amber-600 text-white p-2.5 rounded-lg shadow">
+        <i class="fa-solid fa-boxes-stacked text-xl"></i>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="text-lg font-bold text-white tracking-wide">SJL Suivi Fourniture & Stock</h1>
+          <span class="inline-flex items-center gap-1 bg-emerald-950 text-emerald-400 border border-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> TEMPS RÉEL
+          </span>
+        </div>
+        <p class="text-xs text-slate-400">Gestion Fourniture Arrimage • Parcs TFZ & CASA • Équipes 3x8</p>
+      </div>
+    </div>
+
+    <div class="flex items-center space-x-3">
+      <!-- Return to Main Triptyque Hub -->
+      <a href="index.html" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-3 py-2 rounded-lg transition flex items-center gap-1.5 shadow">
+        <i class="fa-solid fa-ship"></i> Retour Portail Port & Triptyque
+      </a>
+
+      <!-- Quick Shift Handover Button -->
+      <button onclick="openShiftModal()" class="bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold px-3 py-2 rounded-lg transition flex items-center gap-1.5 shadow">
+        <i class="fa-solid fa-users-viewfinder"></i> Passation Shift (3x8)
+      </button>
+
+      <!-- Excel Export -->
+      <button onclick="exportInventoryExcel()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-3 py-2 rounded-lg shadow transition flex items-center gap-1.5">
+        <i class="fa-solid fa-file-excel"></i> Export Excel
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="flex-1 p-4 sm:p-6 max-w-7xl w-full mx-auto space-y-6">
+
+    <!-- 1. PARK SELECTOR & QUICK ACTION -->
+    <div class="flex flex-wrap justify-between items-center gap-4 bg-slate-800 border border-slate-700 p-3 rounded-2xl shadow">
+      <!-- Switch between TFZ and CASA -->
+      <div class="flex items-center gap-2">
+        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider ml-2">Sélection Parc :</span>
+        <div class="inline-flex bg-slate-900 p-1 rounded-xl border border-slate-700">
+          <button id="btnParkTFZ" onclick="switchPark('TFZ')" class="px-5 py-2 rounded-lg text-xs font-bold transition bg-amber-600 text-white shadow">
+            <i class="fa-solid fa-industry mr-1.5"></i> PARC TFZ (Tanger)
+          </button>
+          <button id="btnParkCASA" onclick="switchPark('CASA')" class="px-5 py-2 rounded-lg text-xs font-bold transition text-slate-400 hover:text-white">
+            <i class="fa-solid fa-warehouse mr-1.5"></i> PARC CASA
+          </button>
+        </div>
+      </div>
+
+      <!-- Button to Open New Transaction Modal -->
+      <div class="flex gap-2">
+        <button onclick="openTransactionModal('ENTREE')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition shadow flex items-center gap-1.5">
+          <i class="fa-solid fa-circle-arrow-down text-sm"></i>
+          <span>+ Enregistrer ENTRÉE</span>
+        </button>
+        <button onclick="openTransactionModal('SORTIE')" class="bg-rose-600 hover:bg-rose-500 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition shadow flex items-center gap-1.5">
+          <i class="fa-solid fa-circle-arrow-up text-sm"></i>
+          <span>- Enregistrer SORTIE</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 2. LIVE STOCK KPI CARDS (Matching your exact Excel columns) -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+      <!-- Sangles OK -->
+      <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl shadow space-y-1">
+        <p class="text-[11px] font-bold text-emerald-400 uppercase">Sangles OK</p>
+        <h3 id="kpiSanglesOk" class="text-2xl font-black text-white">0</h3>
+        <span id="kpiSanglesNok" class="text-[10px] text-rose-400 block font-semibold">NOK: 0</span>
+      </div>
+
+      <!-- Barres OK -->
+      <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl shadow space-y-1">
+        <p class="text-[11px] font-bold text-blue-400 uppercase">Barres OK</p>
+        <h3 id="kpiBarresOk" class="text-2xl font-black text-white">0</h3>
+        <span id="kpiBarresNok" class="text-[10px] text-rose-400 block font-semibold">NOK: 0</span>
+      </div>
+
+      <!-- Barres Stackability -->
+      <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl shadow space-y-1">
+        <p class="text-[11px] font-bold text-amber-400 uppercase">Stackability</p>
+        <h3 id="kpiStackability" class="text-2xl font-black text-white">0</h3>
+        <span class="text-[10px] text-slate-400 block">Double plancher</span>
+      </div>
+
+      <!-- Barres Frigo -->
+      <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl shadow space-y-1">
+        <p class="text-[11px] font-bold text-cyan-400 uppercase">Barres Frigo</p>
+        <h3 id="kpiBarresFrigo" class="text-2xl font-black text-white">0</h3>
+        <span class="text-[10px] text-slate-400 block">Caissons froids</span>
+      </div>
+
+      <!-- Tapis Antidérapant -->
+      <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl shadow space-y-1">
+        <p class="text-[11px] font-bold text-violet-400 uppercase">Tapis / Trafat</p>
+        <h3 id="kpiTapis" class="text-2xl font-black text-white">0</h3>
+        <span class="text-[10px] text-slate-400 block">Tapis de calage</span>
+      </div>
+
+      <!-- Dernier Shift Loggé -->
+      <div class="bg-slate-800 border border-purple-800/40 p-4 rounded-xl shadow space-y-1 bg-purple-950/20">
+        <p class="text-[11px] font-bold text-purple-300 uppercase">Dernier Shift</p>
+        <h3 id="kpiLastShift" class="text-base font-bold text-white truncate">-</h3>
+        <span id="kpiLastShiftAgents" class="text-[10px] text-purple-400 block truncate">Agents: -</span>
+      </div>
+    </div>
+
+    <!-- 3. MOVEMENTS AUDIT LEDGER (ENTREES & SORTIES) -->
+    <div class="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow space-y-3 p-4">
+      <div class="flex flex-wrap justify-between items-center gap-3">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-list-check text-amber-400"></i>
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider">
+            Historique des Mouvements (<span id="ledgerParkTitle">PARC TFZ</span>)
+          </h3>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <input type="text" id="filterSearch" oninput="renderMovementsTable()" placeholder="Recherche matricule, chauffeur..." class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+          
+          <select id="filterType" onchange="renderMovementsTable()" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+            <option value="ALL">Tous les Flux (Entrée & Sortie)</option>
+            <option value="ENTREE">🟢 Entrées Uniquement</option>
+            <option value="SORTIE">🔴 Sorties Uniquement</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Table View -->
+      <div class="overflow-x-auto border border-slate-700 rounded-lg">
+        <table class="w-full text-left text-xs text-slate-300">
+          <thead class="bg-slate-900/90 text-slate-400 uppercase font-semibold border-b border-slate-700 text-[11px]">
+            <tr>
+              <th class="py-2.5 px-3">Date & Heure</th>
+              <th class="py-2.5 px-3">Sens</th>
+              <th class="py-2.5 px-3">Tracteur / Remorque</th>
+              <th class="py-2.5 px-3">Chauffeur</th>
+              <th class="py-2.5 px-2 text-center text-blue-400">Barres OK</th>
+              <th class="py-2.5 px-2 text-center text-amber-400">Stackability</th>
+              <th class="py-2.5 px-2 text-center text-emerald-400">Sangles OK</th>
+              <th class="py-2.5 px-2 text-center text-violet-400">Tapis</th>
+              <th class="py-2.5 px-3">Observations / Usine</th>
+              <th class="py-2.5 px-3 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="movementsTableBody" class="divide-y divide-slate-700/60 font-medium"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ==================== MODAL 1: TRANSACTION (ENTREE / SORTIE) ==================== -->
+  <div id="transactionModal" class="fixed inset-0 bg-slate-950/90 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm overflow-y-auto">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 max-w-xl w-full shadow-2xl space-y-4 my-8">
+      <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+        <div class="flex items-center gap-2">
+          <i id="transModalIcon" class="fa-solid fa-circle-arrow-down text-emerald-400 text-lg"></i>
+          <h2 id="transModalTitle" class="text-base font-bold text-white uppercase tracking-wider">Enregistrer une Entrée</h2>
+        </div>
+        <button onclick="closeTransactionModal()" class="text-slate-400 hover:text-white text-lg font-bold">✕</button>
+      </div>
+
+      <form id="transactionForm" onsubmit="saveTransaction(event)" class="space-y-4">
+        <input type="hidden" id="transType" value="ENTREE">
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">Date *</label>
+            <input type="date" id="transDate" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500">
+          </div>
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">Heure *</label>
+            <input type="time" id="transTime" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">Matricule Tracteur / Remorque *</label>
+            <input type="text" id="transMatricule" required placeholder="ex: R 3416 BDD / 44927 D 40" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-yellow-300 font-bold uppercase focus:outline-none focus:border-amber-500">
+          </div>
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">Nom du Chauffeur *</label>
+            <input type="text" id="transChauffeur" required placeholder="ex: YOUSSEF ALAZRAK" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white uppercase focus:outline-none focus:border-amber-500">
+          </div>
+        </div>
+
+        <!-- Fourniture Counts -->
+        <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-700/60 space-y-3">
+          <p class="text-[11px] font-bold text-amber-400 uppercase tracking-wider">Quantités Matériel Constatées</p>
+          
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <div>
+              <label class="block text-[10px] font-semibold text-blue-300 uppercase mb-1">Barres OK</label>
+              <input type="number" id="countBarresOk" min="0" value="0" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-center font-bold text-white">
+            </div>
+            <div>
+              <label class="block text-[10px] font-semibold text-amber-300 uppercase mb-1">Stackability</label>
+              <input type="number" id="countStackability" min="0" value="0" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-center font-bold text-white">
+            </div>
+            <div>
+              <label class="block text-[10px] font-semibold text-emerald-300 uppercase mb-1">Sangles OK</label>
+              <input type="number" id="countSanglesOk" min="0" value="0" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-center font-bold text-white">
+            </div>
+            <div>
+              <label class="block text-[10px] font-semibold text-violet-300 uppercase mb-1">Tapis</label>
+              <input type="number" id="countTapis" min="0" value="0" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-center font-bold text-white">
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">Commentaire / Destination / Usine (ex: LEONI, NO SIRO...)</label>
+          <input type="text" id="transComment" placeholder="ex: Bon N° 20 - Destination LEONI BERRECHID" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500">
+        </div>
+
+        <div class="flex justify-end gap-3 pt-2">
+          <button type="button" onclick="closeTransactionModal()" class="bg-slate-700 hover:bg-slate-600 text-slate-300 font-semibold px-4 py-2 rounded-lg text-xs transition">
+            Annuler
+          </button>
+          <button type="submit" id="btnSaveTrans" class="bg-amber-600 hover:bg-amber-500 text-white font-bold px-6 py-2 rounded-lg text-xs transition shadow flex items-center gap-2">
+            <i class="fa-solid fa-floppy-disk"></i>
+            <span>Valider et Enregistrer</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 2: PASSATION DE SHIFT 3x8 ==================== -->
+  <div id="shiftModal" class="fixed inset-0 bg-slate-950/90 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm overflow-y-auto">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 max-w-xl w-full shadow-2xl space-y-4 my-8">
+      <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-users-viewfinder text-purple-400 text-lg"></i>
+          <h2 class="text-base font-bold text-white uppercase tracking-wider">Passation de Consigne Shift (3x8)</h2>
+        </div>
+        <button onclick="closeShiftModal()" class="text-slate-400 hover:text-white text-lg font-bold">✕</button>
+      </div>
+
+      <form id="shiftForm" onsubmit="saveShiftHandover(event)" class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">Date *</label>
+            <input type="date" id="shiftDate" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
+          </div>
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">Heure Shift *</label>
+            <select id="shiftHeure" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
+              <option value="06H00">06H00 (Matin)</option>
+              <option value="14H00">14H00 (Après-midi)</option>
+              <option value="22H00">22H00 (Nuit)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">Agent Sortant (Agent 1) *</label>
+            <input type="text" id="shiftAgent1" required placeholder="ex: MOHAMED" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white uppercase">
+          </div>
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-400 mb-1 uppercase">Agent Entrant (Agent 2) *</label>
+            <input type="text" id="shiftAgent2" required placeholder="ex: OUHAMID" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white uppercase">
+          </div>
+        </div>
+
+        <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-700/60 space-y-3">
+          <p class="text-[11px] font-bold text-purple-300 uppercase tracking-wider">Inventaire Physique Relevé au Changement de Shift</p>
+          
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <div>
+              <label class="block text-[10px] font-semibold text-emerald-300 uppercase mb-1">Stock Sangles</label>
+              <input type="number" id="shiftSangles" required min="0" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-center font-bold text-white">
+            </div>
+            <div>
+              <label class="block text-[10px] font-semibold text-blue-300 uppercase mb-1">Stock Barres</label>
+              <input type="number" id="shiftBarres" required min="0" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-center font-bold text-white">
+            </div>
+            <div>
+              <label class="block text-[10px] font-semibold text-amber-300 uppercase mb-1">Stackability</label>
+              <input type="number" id="shiftStackability" required min="0" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-center font-bold text-white">
+            </div>
+            <div>
+              <label class="block text-[10px] font-semibold text-cyan-300 uppercase mb-1">Barres Frigo</label>
+              <input type="number" id="shiftFrigo" required min="0" value="4" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-center font-bold text-white">
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-2">
+          <button type="button" onclick="closeShiftModal()" class="bg-slate-700 hover:bg-slate-600 text-slate-300 font-semibold px-4 py-2 rounded-lg text-xs transition">
+            Annuler
+          </button>
+          <button type="submit" id="btnSaveShift" class="bg-purple-600 hover:bg-purple-500 text-white font-bold px-6 py-2 rounded-lg text-xs transition shadow flex items-center gap-2">
+            <i class="fa-solid fa-check-double"></i>
+            <span>Valider la Passation</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Custom JavaScript Logic -->
+  <script src="inventory.js"></script>
+</body>
+</html>
