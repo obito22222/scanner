@@ -4,9 +4,12 @@ let currentUser = null;
 let rawList = [];
 let allUsers = [];
 
-// Clean key for Firebase paths
+// Convert spaces and special characters to lowercase underscores
 function sanitizeKey(key) {
-  return (key || "").replace(/[.#$\[\]\/]/g, "_").trim();
+  return (key || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\s.#$\[\]\/]+/g, "_");
 }
 
 // ==================== 1. AUTHENTICATION & LOGIN ====================
@@ -14,7 +17,7 @@ async function handleLogin(e) {
   e.preventDefault();
   const rawUser = document.getElementById('loginUsername').value.trim();
   const password = document.getElementById('loginPassword').value.trim();
-  const cleanUser = sanitizeKey(rawUser);
+  const cleanKey = sanitizeKey(rawUser);
   const errorDiv = document.getElementById('authError');
   const btn = document.getElementById('loginBtn');
 
@@ -25,10 +28,31 @@ async function handleLogin(e) {
   if (errorDiv) errorDiv.classList.add('hidden');
 
   try {
-    const res = await fetch(`${DB_URL}/users/${cleanUser}.json`);
-    const user = await res.json();
+    // 1. Direct hit with sanitized key (e.g. zouhair_baaziz)
+    let res = await fetch(`${DB_URL}/users/${cleanKey}.json`);
+    let user = await res.json();
+    let matchedKey = cleanKey;
 
-    if (!user || user.password !== password) {
+    // 2. Fallback search across all records if direct key differs
+    if (!user) {
+      const allRes = await fetch(`${DB_URL}/users.json`);
+      const allData = await allRes.json();
+      if (allData) {
+        const found = Object.keys(allData).find(k => {
+          const u = allData[k];
+          return k.toLowerCase() === rawUser.toLowerCase() ||
+                 (u.username && u.username.toLowerCase() === rawUser.toLowerCase()) ||
+                 (u.userKey && u.userKey.toLowerCase() === cleanKey);
+        });
+        if (found) {
+          user = allData[found];
+          matchedKey = found;
+        }
+      }
+    }
+
+    // 3. Password match check
+    if (!user || String(user.password).trim() !== password) {
       if (errorDiv) {
         errorDiv.innerText = "Identifiant ou mot de passe incorrect.";
         errorDiv.classList.remove('hidden');
@@ -36,17 +60,21 @@ async function handleLogin(e) {
       return;
     }
 
-    // Save session
-    currentUser = { username: cleanUser, role: user.role };
+    // 4. Store active session
+    currentUser = { 
+      username: user.username || matchedKey, 
+      userKey: matchedKey,
+      role: user.role 
+    };
     localStorage.setItem('sjl_user', JSON.stringify(currentUser));
 
-    // Direct routing: Pompistes go straight to the inventory ledger
-    if (user.role === 'PARK_AGENT') {
+    // 5. Automatic redirect for park workers to inventory page
+    if (user.role === 'PARK_AGENT' || user.role === 'POMPISTE') {
       window.location.href = "inventory.html";
       return;
     }
 
-    // Other roles: Hide auth screen and render workspace
+    // 6. Workspace entry for supervisor / port ops
     document.getElementById('authScreen').classList.add('hidden');
     updateUserBadge();
     applyRolePermissions();
@@ -71,7 +99,7 @@ function checkExistingSession() {
   if (sessionStr) {
     currentUser = JSON.parse(sessionStr);
 
-    if (currentUser.role === 'PARK_AGENT') {
+    if (currentUser.role === 'PARK_AGENT' || currentUser.role === 'POMPISTE') {
       window.location.href = "inventory.html";
       return;
     }
@@ -117,7 +145,6 @@ function applyRolePermissions() {
     }
   }
 
-  // Auto-route driver role to driver view
   if (currentUser.role === 'DRIVER') {
     showModule('DRIVER');
   }
@@ -145,14 +172,14 @@ async function fetchUsersList() {
     if (!data) return;
 
     Object.keys(data).forEach(key => {
-      const u = { username: key, ...data[key] };
+      const u = { key: key, ...data[key] };
       allUsers.push(u);
 
       tbody.innerHTML += `
         <tr class="hover:bg-slate-800/60">
-          <td class="py-2.5 px-3 font-semibold text-white">${u.username}</td>
+          <td class="py-2.5 px-3 font-semibold text-white">${u.username || key}</td>
           <td class="py-2.5 px-3">
-            <select onchange="updateUserRole('${u.username}', this.value)" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-amber-400">
+            <select onchange="updateUserRole('${key}', this.value)" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-amber-400">
               <option value="PARK_AGENT" ${u.role === 'PARK_AGENT' ? 'selected' : ''}>Agent Parc / Pompiste</option>
               <option value="DRIVER" ${u.role === 'DRIVER' ? 'selected' : ''}>Chauffeur</option>
               <option value="CHARGE_CLIENT" ${u.role === 'CHARGE_CLIENT' ? 'selected' : ''}>Chargé Clientèle</option>
@@ -162,7 +189,7 @@ async function fetchUsersList() {
             </select>
           </td>
           <td class="py-2.5 px-3 text-right">
-            <button onclick="deleteUser('${u.username}')" class="text-slate-500 hover:text-rose-400 p-1" title="Supprimer">
+            <button onclick="deleteUser('${key}')" class="text-slate-500 hover:text-rose-400 p-1" title="Supprimer">
               <i class="fa-solid fa-trash-can"></i>
             </button>
           </td>
@@ -179,25 +206,31 @@ async function adminCreateUser(e) {
   const rawU = document.getElementById('newUsername').value.trim();
   const pwd = document.getElementById('newPassword').value.trim();
   const role = document.getElementById('newRole').value;
-  const cleanU = sanitizeKey(rawU);
+  const cleanKey = sanitizeKey(rawU);
 
   try {
-    await fetch(`${DB_URL}/users/${cleanU}.json`, {
+    await fetch(`${DB_URL}/users/${cleanKey}.json`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: pwd, role: role })
+      body: JSON.stringify({ 
+        username: rawU,
+        userKey: cleanKey,
+        password: pwd, 
+        role: role,
+        createdAt: new Date().toISOString()
+      })
     });
     document.getElementById('adminCreateUserForm').reset();
     fetchUsersList();
-    alert(`Compte ${cleanU} créé avec succès !`);
+    alert(`Compte ${rawU} créé avec succès !`);
   } catch (err) {
     alert("Erreur lors de la création : " + err.message);
   }
 }
 
-async function updateUserRole(username, newRole) {
+async function updateUserRole(userKey, newRole) {
   try {
-    await fetch(`${DB_URL}/users/${username}/role.json`, {
+    await fetch(`${DB_URL}/users/${userKey}/role.json`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newRole)
@@ -207,15 +240,15 @@ async function updateUserRole(username, newRole) {
   }
 }
 
-async function deleteUser(username) {
-  if (username === currentUser.username) {
+async function deleteUser(userKey) {
+  if (currentUser && (currentUser.userKey === userKey || currentUser.username === userKey)) {
     alert("Vous ne pouvez pas supprimer votre propre compte actif.");
     return;
   }
-  if (!confirm(`Supprimer définitivement l'utilisateur ${username} ?`)) return;
+  if (!confirm(`Supprimer définitivement cet utilisateur ?`)) return;
 
   try {
-    await fetch(`${DB_URL}/users/${username}.json`, { method: 'DELETE' });
+    await fetch(`${DB_URL}/users/${userKey}.json`, { method: 'DELETE' });
     fetchUsersList();
   } catch (err) {
     alert("Erreur : " + err.message);
@@ -611,7 +644,7 @@ function exportToExcel() {
   XLSX.writeFile(wb, `SJL_Fleet_${new Date().toISOString().split('T')[0]}.xlsx`);
 }
 
-// Initial Boot
+// Initial session check
 window.addEventListener('DOMContentLoaded', () => {
   checkExistingSession();
 });
