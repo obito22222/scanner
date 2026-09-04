@@ -1,5 +1,6 @@
 const DB_URL = "https://sjl-fleet-triptyque-default-rtdb.firebaseio.com";
 
+let currentUser = null;
 let currentPark = 'TFZ';
 let currentStock = {
   barres_ok: 0,
@@ -12,7 +13,43 @@ let currentStock = {
 let movementsList = [];
 let lastShiftData = null;
 
-// ==================== PARK SELECTOR ====================
+// ==================== 1. RBAC & AUTH PERMISSIONS ====================
+function checkAuthAndPermissions() {
+  const sessionStr = localStorage.getItem('sjl_user') || sessionStorage.getItem('sjl_user');
+  
+  if (!sessionStr) {
+    // Redirect to login if user arrived unauthenticated
+    window.location.href = "index.html";
+    return;
+  }
+
+  currentUser = JSON.parse(sessionStr);
+
+  const badgeName = document.getElementById('invUserBadgeName');
+  const badgeRole = document.getElementById('invUserBadgeRole');
+  if (badgeName) badgeName.innerText = currentUser.username || "Agent";
+  if (badgeRole) badgeRole.innerText = currentUser.role || "POMPISTE";
+
+  // Restrict Pompistes & Yard Workers:
+  // Cannot export full excel database, cannot access main customs port engine
+  const isRestrictedWorker = (currentUser.role === 'PARK_AGENT' || currentUser.role === 'POMPISTE' || currentUser.role === 'DRIVER');
+
+  if (isRestrictedWorker) {
+    const exportBtn = document.getElementById('btnExportInv');
+    if (exportBtn) exportBtn.classList.add('hidden');
+
+    const navHubBtn = document.getElementById('btnNavMainHub');
+    if (navHubBtn) navHubBtn.classList.add('hidden');
+  }
+}
+
+function logoutInventory() {
+  localStorage.removeItem('sjl_user');
+  sessionStorage.removeItem('sjl_user');
+  window.location.href = "index.html";
+}
+
+// ==================== 2. PARK SELECTOR ====================
 function switchPark(park) {
   currentPark = park;
   document.getElementById('ledgerParkTitle').innerText = `PARC ${park}`;
@@ -31,7 +68,7 @@ function switchPark(park) {
   loadParkData();
 }
 
-// ==================== MODAL CONTROLS ====================
+// ==================== 3. MODAL CONTROLS ====================
 function openTransactionModal(type) {
   const modal = document.getElementById('transactionModal');
   const title = document.getElementById('transModalTitle');
@@ -75,10 +112,9 @@ function closeShiftModal() {
   document.getElementById('shiftModal').classList.add('hidden');
 }
 
-// ==================== DATA FETCHING & DYNAMIC BALANCING ====================
+// ==================== 4. DATA ENGINE ====================
 async function loadParkData() {
   try {
-    // 1. Fetch movements ledger
     const movRes = await fetch(`${DB_URL}/inventory/${currentPark}/movements.json`);
     const movData = await movRes.json();
     movementsList = [];
@@ -88,11 +124,9 @@ async function loadParkData() {
       });
     }
 
-    // 2. Fetch last shift baseline
     const shiftRes = await fetch(`${DB_URL}/inventory/${currentPark}/last_shift.json`);
     lastShiftData = await shiftRes.json();
 
-    // 3. Dynamically compute live stock balance
     recalculateLiveStock();
     renderMovementsTable();
   } catch (err) {
@@ -101,7 +135,6 @@ async function loadParkData() {
 }
 
 function recalculateLiveStock() {
-  // Baseline starts from the last shift count or zero
   let totals = {
     barres_ok: lastShiftData ? (parseInt(lastShiftData.barresOk) || 0) : 0,
     barres_nok: 0,
@@ -111,7 +144,6 @@ function recalculateLiveStock() {
     cantoneras_nok: 0
   };
 
-  // Replay all logged transactions (+ for ENTRÉE, - for SORTIE)
   movementsList.forEach(item => {
     const factor = item.type === 'ENTREE' ? 1 : -1;
     totals.barres_ok += (parseInt(item.barresOk) || 0) * factor;
@@ -122,7 +154,6 @@ function recalculateLiveStock() {
     totals.cantoneras_nok += (parseInt(item.cantonerasNok) || 0) * factor;
   });
 
-  // Guard against negative balances
   currentStock = {
     barres_ok: Math.max(0, totals.barres_ok),
     barres_nok: Math.max(0, totals.barres_nok),
@@ -132,7 +163,6 @@ function recalculateLiveStock() {
     cantoneras_nok: Math.max(0, totals.cantoneras_nok)
   };
 
-  // Sync state to Firebase in background
   fetch(`${DB_URL}/inventory/${currentPark}/stock.json`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -161,7 +191,7 @@ function updateKPIDisplay() {
   }
 }
 
-// ==================== TRANSACTION ACTIONS ====================
+// ==================== 5. TRANSACTIONS & HANDOVER ====================
 async function saveTransaction(e) {
   e.preventDefault();
   const btn = document.getElementById('btnSaveTrans');
@@ -245,7 +275,7 @@ async function saveShiftHandover(e) {
     closeShiftModal();
     alert("Passation de shift enregistrée avec succès !");
   } catch (err) {
-    alert("Erreur lors de la passation: " + err.message);
+    alert("Erreur: " + err.message);
   } finally {
     btn.disabled = false;
     btn.innerHTML = `<i class="fa-solid fa-check-double"></i> <span>Valider la Passation</span>`;
@@ -253,6 +283,12 @@ async function saveShiftHandover(e) {
 }
 
 async function deleteMovement(id) {
+  // Permission Guard: Only Supervisor can delete
+  if (!currentUser || currentUser.role !== 'SUPERVISOR') {
+    alert("Action réservée aux Superviseurs.");
+    return;
+  }
+
   if (!confirm("Voulez-vous supprimer ce mouvement ? Le stock sera automatiquement recalculé.")) return;
   try {
     await fetch(`${DB_URL}/inventory/${currentPark}/movements/${id}.json`, { 
@@ -263,11 +299,11 @@ async function deleteMovement(id) {
     recalculateLiveStock();
     renderMovementsTable();
   } catch (err) {
-    alert("Erreur: " + err.message);
+    alert("Erreur lors de la suppression: " + err.message);
   }
 }
 
-// ==================== RENDERING & EXPORT ====================
+// ==================== 6. TABLE RENDER WITH PERMISSION GUARDS ====================
 function renderMovementsTable() {
   const tbody = document.getElementById('movementsTableBody');
   const search = (document.getElementById('filterSearch').value || '').toLowerCase();
@@ -290,6 +326,8 @@ function renderMovementsTable() {
     return;
   }
 
+  const isSupervisor = currentUser && currentUser.role === 'SUPERVISOR';
+
   filtered.forEach(row => {
     const isEntree = row.type === 'ENTREE';
     const typeBadge = isEntree ? 
@@ -305,6 +343,11 @@ function renderMovementsTable() {
     const cantonerasDisplay = (row.cantonerasOk || row.cantonerasNok) ? 
       `<span class="text-white font-bold">${row.cantonerasOk || 0}</span> / <span class="text-rose-400 font-bold">${row.cantonerasNok || 0}</span>` : `-`;
 
+    // Only Supervisors see the trash can button
+    const actionCell = isSupervisor
+      ? `<button onclick="deleteMovement('${row.id}')" class="text-slate-500 hover:text-rose-400 p-1" title="Supprimer"><i class="fa-solid fa-trash-can"></i></button>`
+      : `<span class="text-[10px] text-slate-600 font-medium">Verrouillé</span>`;
+
     tbody.innerHTML += `
       <tr class="hover:bg-slate-700/40">
         <td class="py-2.5 px-3 whitespace-nowrap text-slate-400">${row.date} <span class="text-slate-200 font-semibold">${row.heure}</span></td>
@@ -315,11 +358,7 @@ function renderMovementsTable() {
         <td class="py-2.5 px-2 text-center">${cinchasDisplay}</td>
         <td class="py-2.5 px-2 text-center">${cantonerasDisplay}</td>
         <td class="py-2.5 px-3 text-slate-300 italic text-[11px]">${row.comment}</td>
-        <td class="py-2.5 px-3 text-right">
-          <button onclick="deleteMovement('${row.id}')" class="text-slate-500 hover:text-rose-400 p-1" title="Supprimer">
-            <i class="fa-solid fa-trash-can"></i>
-          </button>
-        </td>
+        <td class="py-2.5 px-3 text-right">${actionCell}</td>
       </tr>
     `;
   });
@@ -353,6 +392,7 @@ function exportInventoryExcel() {
   XLSX.writeFile(wb, `SJL_${currentPark}_Equipment_${new Date().toISOString().split('T')[0]}.xlsx`);
 }
 
-// Initial boot
+// Initial Boot with RBAC Check
+checkAuthAndPermissions();
 loadParkData();
 setInterval(loadParkData, 10000);
