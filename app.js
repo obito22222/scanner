@@ -143,7 +143,11 @@ async function handleLogin(e) {
     btn.disabled = true;
     btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Connexion...`;
   }
-
+  // In handleLogin() after successful password match:
+if (matchedUser.role === 'PARK_AGENT') {
+  window.location.href = "inventory.html";
+  return;
+}
   try {
     const res = await fetch(`${DB_URL}/users/${cleanUser}.json`);
     const user = await res.json();
@@ -678,6 +682,7 @@ async function loadUsersList() {
         <td class="py-3 px-3 text-right flex items-center justify-end gap-2">
           <select onchange="updateUserRole('${userKey}', this.value)" class="bg-slate-900 border border-slate-600 rounded px-2 py-1 text-xs text-white">
             <option value="DRIVER" ${u.role === 'DRIVER' ? 'selected' : ''}>Chauffeur</option>
+            <option value="PARK_AGENT" ${u.role === 'PARK_AGENT' ? 'selected' : ''}>Agent Parc / Pompiste</option>
             <option value="OPERATOR" ${u.role === 'OPERATOR' ? 'selected' : ''}>Opérateur (Lecture)</option>
             <option value="CHARGE_CLIENT" ${u.role === 'CHARGE_CLIENT' ? 'selected' : ''}>Chargé de Clientèle</option>
             <option value="PORT_OPS" ${u.role === 'PORT_OPS' ? 'selected' : ''}>Port Tanger Med</option>
