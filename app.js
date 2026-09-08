@@ -648,3 +648,90 @@ function exportToExcel() {
 window.addEventListener('DOMContentLoaded', () => {
   checkExistingSession();
 });
+// ==========================================
+// IMPORT AUTOMATIQUE EXCEL PORT TANGER MED
+// ==========================================
+function handleExcelImport(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+
+  reader.onload = async function(e) {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+
+      // Automatically select the last sheet (the most recent date, e.g. '08-09')
+      const targetSheetName = workbook.SheetNames[workbook.SheetNames.length - 1];
+      const worksheet = workbook.Sheets[targetSheetName];
+      const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
+
+      // Find the header row dynamically (where 'Matricule' appears)
+      let headerRowIndex = rows.findIndex(r => 
+        r.some(cell => String(cell).toLowerCase().includes("matricule"))
+      );
+      if (headerRowIndex === -1) headerRowIndex = 1;
+
+      const importUpdates = {};
+      let count = 0;
+
+      for (let i = headerRowIndex + 1; i < rows.length; i++) {
+        const row = rows[i];
+        const rawMatricule = row[1]; // Column B in Khalid's sheet: Matricule
+
+        if (!rawMatricule || String(rawMatricule).trim().length < 3) continue;
+
+        // Clean matricule key for Firebase
+        const cleanKey = String(rawMatricule).trim().toUpperCase().replace(/[\s-]/g, "");
+
+        // Helper to convert date cells safely to YYYY-MM-DD
+        const formatDate = (val) => {
+          if (!val) return "";
+          if (val instanceof Date) return val.toISOString().split('T')[0];
+          const str = String(val).trim();
+          return str.split(" ")[0]; // takes date portion if includes time
+        };
+
+        const dateArrivee = formatDate(row[4]); // Column E: Date d'arrivée Port
+        const dateSortie = formatDate(row[8]);  // Column I: Date de sortie
+
+        importUpdates[`port_trailers/${cleanKey}`] = {
+          matricule: String(rawMatricule).trim().toUpperCase(),
+          cleanKey: cleanKey,
+          client: row[2] ? String(row[2]).trim() : "-",          // Col C: Client
+          transitaire: row[3] ? String(row[3]).trim() : "-",     // Col D: Transitaire
+          arriveePort: dateArrivee,                              // Col E: Arrivée
+          etatDedouanement: row[5] ? String(row[5]).trim() : "En attente", // Col F: État
+          chauffeur: row[6] ? String(row[6]).trim() : "-",       // Col G: Chauffeur
+          sortiePort: dateSortie,                               // Col I: Sortie
+          bad: row[11] ? String(row[11]).trim() : "-",           // Col L: BAD
+          pli: row[12] ? String(row[12]).trim() : "-",           // Col M: PLI
+          eur1: row[13] ? String(row[13]).trim() : "-",          // Col N: EUR1
+          cg: row[14] ? String(row[14]).trim() : "-",            // Col O: Carte Grise
+          assur: row[15] ? String(row[15]).trim() : "-",         // Col P: Assurance
+          vt: row[16] ? String(row[16]).trim() : "-",            // Col Q: Visite Technique
+          sourceSheet: targetSheetName,
+          lastUpdated: new Date().toISOString()
+        };
+
+        count++;
+      }
+
+      if (count > 0) {
+        // Bulk write to Firebase
+        await database.ref().update(importUpdates);
+        alert(`Synchronisation réussie !\n${count} remorques importées depuis l'onglet [${targetSheetName}].`);
+      } else {
+        alert(`Aucune remorque valide trouvée dans la feuille [${targetSheetName}].`);
+      }
+
+    } catch (err) {
+      console.error("Erreur lors de l'import Excel:", err);
+      alert("Erreur lors de la lecture du fichier Excel: " + err.message);
+    }
+  };
+
+  reader.readAsArrayBuffer(file);
+  event.target.value = ""; // Reset input so you can upload the same file again if updated
+}

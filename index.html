@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+  </head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SJL Hub | Port Tanger Med & Triptyque 360°</title>
@@ -441,12 +444,22 @@
           <p class="text-xs text-slate-400 mt-0.5">Mettez à jour les statuts de dédouanement et ajoutez la date de sortie port.</p>
         </div>
 
-        <div id="portAddBtnContainer" class="hidden">
-          <button onclick="openNewTrailerModal()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-2.5 rounded-lg text-xs transition shadow flex items-center gap-2">
-            <i class="fa-solid fa-circle-plus text-sm"></i>
-            <span>+ Saisir une Remorque</span>
-          </button>
-        </div>
+        <div id="portAddBtnContainer" class="hidden flex items-center gap-2">
+    <!-- Hidden file input for Excel upload -->
+    <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleExcelImport(event)">
+
+    <!-- Button to trigger Excel file picker -->
+    <button type="button" onclick="document.getElementById('excelFileInput').click()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-3.5 py-2 rounded-lg text-xs flex items-center gap-2 transition-all shadow-md">
+        <i class="fa-solid fa-file-excel text-sm"></i>
+        <span>Importer Excel Port</span>
+    </button>
+
+    <!-- Original manual entry button -->
+    <button onclick="openNewTrailerModal()" class="bg-blue-600 hover:bg-blue-500 text-white font-medium px-3.5 py-2 rounded-lg text-xs flex items-center gap-2 transition-all shadow-md">
+        <i class="fa-solid fa-circle-plus text-sm"></i>
+        <span>+ Saisir une Remorque</span>
+    </button>
+</div>
       </div>
 
       <div class="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow">
