@@ -1,42 +1,33 @@
 // ==========================================
 // IMPORT AUTOMATIQUE EXCEL PORT TANGER MED
 // ==========================================
-async function handleExcelImport(event) {
+function handleExcelImport(event) {
   const file = event.target.files[0];
   if (!file) return;
-
-  // 1. Detect Firebase Database instance safely
-  let rtdb = null;
-  try {
-    if (typeof database !== "undefined" && database && typeof database.ref === "function") {
-      rtdb = database;
-    } else if (typeof db !== "undefined" && db && typeof db.ref === "function") {
-      rtdb = db;
-    } else if (window.database && typeof window.database.ref === "function") {
-      rtdb = window.database;
-    } else if (window.db && typeof window.db.ref === "function") {
-      rtdb = window.db;
-    } else if (typeof firebase !== "undefined" && firebase.database) {
-      rtdb = firebase.database();
-    }
-  } catch (err) {
-    console.warn("Detection standard échouée:", err);
-  }
-
-  if (!rtdb) {
-    alert("Erreur: Impossible de se connecter à la base de données Firebase. Vérifiez l'initialisation dans app.js.");
-    event.target.value = "";
-    return;
-  }
 
   const reader = new FileReader();
 
   reader.onload = async function(e) {
     try {
+      // 1. Resolve Firebase Database instance dynamically
+      let rtdb = null;
+      if (typeof db !== "undefined" && db && typeof db.ref === "function") {
+        rtdb = db;
+      } else if (typeof database !== "undefined" && database && typeof database.ref === "function") {
+        rtdb = database;
+      } else if (typeof firebase !== "undefined" && firebase.database) {
+        rtdb = firebase.database();
+      }
+
+      if (!rtdb) {
+        throw new Error("Impossible de trouver l'instance Firebase (db/database non initialisé).");
+      }
+
+      // 2. Read Excel binary content
       const data = new Uint8Array(e.target.result);
       const workbook = XLSX.read(data, { type: 'array', cellDates: true });
 
-      // Pick the last sheet (most recent day tab, e.g. '08-09')
+      // Automatically target the latest day/sheet (last tab, e.g. '08-09')
       const targetSheetName = workbook.SheetNames[workbook.SheetNames.length - 1];
       const worksheet = workbook.Sheets[targetSheetName];
       const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
@@ -46,7 +37,7 @@ async function handleExcelImport(event) {
         return;
       }
 
-      // Locate header row containing 'Matricule'
+      // 3. Find the header row dynamically (where 'matricule' is written)
       let headerRowIndex = rows.findIndex(r => 
         Array.isArray(r) && r.some(cell => String(cell).toLowerCase().includes("matricule"))
       );
@@ -55,6 +46,7 @@ async function handleExcelImport(event) {
       const importUpdates = {};
       let count = 0;
 
+      // Helper to cleanly format dates as YYYY-MM-DD
       const parseExcelDate = (val) => {
         if (!val) return "";
         if (val instanceof Date) {
@@ -63,9 +55,11 @@ async function handleExcelImport(event) {
           const d = String(val.getDate()).padStart(2, '0');
           return `${y}-${m}-${d}`;
         }
-        return String(val).trim().split(" ")[0];
+        const str = String(val).trim();
+        return str.split(" ")[0]; // Strip time component if present
       };
 
+      // 4. Parse trailer entries
       for (let i = headerRowIndex + 1; i < rows.length; i++) {
         const row = rows[i];
         if (!row || row.length < 2) continue;
@@ -73,17 +67,21 @@ async function handleExcelImport(event) {
         const rawMatricule = row[1]; // Col B: Matricule
         if (!rawMatricule || String(rawMatricule).trim().length < 3) continue;
 
+        // Clean key for Firebase path
         const cleanKey = String(rawMatricule).trim().toUpperCase().replace(/[\s-]/g, "");
+
+        const dateArrivee = parseExcelDate(row[4]); // Col E: Date d'arrivée Port
+        const dateSortie  = parseExcelDate(row[8]); // Col I: Date de sortie
 
         importUpdates[`port_trailers/${cleanKey}`] = {
           matricule: String(rawMatricule).trim().toUpperCase(),
           cleanKey: cleanKey,
           client: row[2] ? String(row[2]).trim() : "-",
           transitaire: row[3] ? String(row[3]).trim() : "-",
-          arriveePort: parseExcelDate(row[4]),
+          arriveePort: dateArrivee,
           etatDedouanement: row[5] ? String(row[5]).trim() : "En attente",
           chauffeur: row[6] ? String(row[6]).trim() : "-",
-          sortiePort: parseExcelDate(row[8]),
+          sortiePort: dateSortie,
           bad: row[11] ? String(row[11]).trim() : "-",
           pli: row[12] ? String(row[12]).trim() : "-",
           eur1: row[13] ? String(row[13]).trim() : "-",
@@ -97,19 +95,20 @@ async function handleExcelImport(event) {
         count++;
       }
 
+      // 5. Update Firebase
       if (count > 0) {
         await rtdb.ref().update(importUpdates);
         alert(`Synchronisation réussie !\n${count} remorques importées depuis l'onglet [${targetSheetName}].`);
       } else {
-        alert(`Aucune remorque valide trouvée dans la feuille [${targetSheetName}].`);
+        alert(`Aucune remorque trouvée dans la feuille [${targetSheetName}].`);
       }
 
     } catch (err) {
-      console.error("Erreur import:", err);
-      alert("Erreur lors de la lecture du fichier Excel: " + err.message);
+      console.error("Erreur import Excel:", err);
+      alert("Erreur lors de l'import: " + err.message);
     }
   };
 
   reader.readAsArrayBuffer(file);
-  event.target.value = "";
+  event.target.value = ""; // Reset input so re-uploading the same file triggers onchange
 }
